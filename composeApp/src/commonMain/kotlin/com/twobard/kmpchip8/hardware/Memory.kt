@@ -1,7 +1,6 @@
 package com.twobard.kmpchip8.hardware
 
 import com.twobard.kmpchip8.Utils.Companion.toUnsignedInt
-import kotlin.experimental.and
 
 class Memory(val ramSize: Int = DEFAULT_RAM_SIZE) {
 

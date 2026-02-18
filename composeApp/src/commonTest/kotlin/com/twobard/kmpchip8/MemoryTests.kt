@@ -6,7 +6,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class MemoryTests {
-    
+
     @Test
     fun `give some value when set value via operator then get value via operator should be equal`() {
         val memory = Memory()

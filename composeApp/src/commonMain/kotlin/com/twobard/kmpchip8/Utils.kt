@@ -1,6 +1,6 @@
 package com.twobard.kmpchip8
 
-import com.twobard.kmpchip8.hardware.System.Nibble
+import com.twobard.kmpchip8.hardware.Nibble
 import kotlin.experimental.and
 
 class Utils {

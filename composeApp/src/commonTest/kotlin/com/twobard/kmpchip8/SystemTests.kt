@@ -2,6 +2,7 @@ package com.twobard.kmpchip8
 
 import com.twobard.kmpchip8.Utils.Companion.toNibbles
 import com.twobard.kmpchip8.hardware.Config
+import com.twobard.kmpchip8.hardware.Nibble
 import com.twobard.kmpchip8.hardware.System
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceTimeBy
@@ -70,18 +71,18 @@ class SystemTests {
     fun `given a byte when it is split into nibbles then nibbles should be correct`() {
         val someByte = 128.toByte()
         val nibbles = someByte.toNibbles()
-        assertEquals(System.Nibble(0x8), nibbles.first)
-        assertEquals(System.Nibble(0x0), nibbles.second)
+        assertEquals(Nibble(0x8), nibbles.first)
+        assertEquals(Nibble(0x0), nibbles.second)
 
         val someOtherByte = 0.toByte()
         val zeroNibbles = someOtherByte.toNibbles()
-        assertEquals(System.Nibble(0x0), zeroNibbles.first)
-        assertEquals(System.Nibble(0x0), zeroNibbles.second)
+        assertEquals(Nibble(0x0), zeroNibbles.first)
+        assertEquals(Nibble(0x0), zeroNibbles.second)
 
         val topByte = 255.toByte()
         val topNibbles = topByte.toNibbles()
-        assertEquals(System.Nibble(0xF), topNibbles.first)
-        assertEquals(System.Nibble(0xF), topNibbles.second)
+        assertEquals(Nibble(0xF), topNibbles.first)
+        assertEquals(Nibble(0xF), topNibbles.second)
 
     }
 }

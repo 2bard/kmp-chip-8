@@ -2,7 +2,11 @@ package com.twobard.kmpchip8.hardware
 
 import com.twobard.kmpchip8.Utils.Companion.toUnsignedInt
 
-class Cpu {
+interface SystemInterface {
+    fun clearDisplay()
+}
+
+class Cpu(val systemInterface: SystemInterface) {
 
     //"a 64-byte stack with 8-bit stack pointer"
     //using an Int here to avoid autoboxing - better perfomance
@@ -35,19 +39,27 @@ class Cpu {
 
         when(nibbles[0].value) {
             0x0 -> {
-                if(nibbles[2] + nibbles[3] == 0xE0.toByte()){
-                    clearDisplay()
+                (nibbles[2] + nibbles[3]).toUnsignedInt().let {
+                    when(it) {
+                        0xE0 -> systemInterface.clearDisplay()
+                        0xEE -> ret()
+                    }
                 }
+            }
+            0x1 -> {
+                jump(nibbles[1], nibbles[2], nibbles[3])
             }
             0x6 -> load(nibbles[1], nibbles[2] + nibbles[3])
         }
     }
 
-    fun clearDisplay(){
-        println("clearing display")
+    fun jump(address1: Nibble, address2: Nibble, address3: Nibble){
+        val address = address1.value + address2.value + address3.value
+        programCounter = address
     }
 
-    fun load(dest: System.Nibble, value: Byte){
+
+    fun load(dest: Nibble, value: Byte){
         registers[dest.value] = value.toUnsignedInt()
     }
 

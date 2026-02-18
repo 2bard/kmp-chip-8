@@ -3,6 +3,7 @@ package com.twobard.kmpchip8
 import com.twobard.kmpchip8.hardware.Config
 import com.twobard.kmpchip8.hardware.Cpu
 import com.twobard.kmpchip8.hardware.System
+import com.twobard.kmpchip8.hardware.SystemInterface
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -13,7 +14,11 @@ class CpuTests {
 
     @BeforeTest
     fun setUp() {
-        cpu = Cpu()
+        cpu = Cpu(systemInterface = object : SystemInterface {
+            override fun clearDisplay() {
+
+            }
+        })
     }
 
     @Test

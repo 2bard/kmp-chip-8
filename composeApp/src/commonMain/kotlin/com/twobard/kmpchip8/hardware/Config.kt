@@ -8,6 +8,7 @@ class Config {
         //"All of the supported programs will start at memory location 0x200"
         val PROGRAM_COUNTER_INIT = 0x200
         val DEFAULT_FONT = DefaultChip8Font()
+        val `60HZ_TIMER` = 16L
     }
 
     interface Chip8Font {

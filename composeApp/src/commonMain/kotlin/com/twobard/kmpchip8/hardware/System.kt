@@ -1,15 +1,36 @@
 package com.twobard.kmpchip8.hardware
 
-import androidx.compose.ui.text.font.Font
+import com.twobard.kmpchip8.Utils.Companion.toNibbles
 import com.twobard.kmpchip8.Utils.Companion.toUnsignedInt
+import com.twobard.kmpchip8.hardware.Config.Companion.`60HZ_TIMER`
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class System(val memory: Memory = Memory(),
              val font: Config.Chip8Font = Config.DEFAULT_FONT,
              val cpu: Cpu = Cpu()) {
 
+    var running = false
+    private var delayTimer = 0
+    private var soundTimer = 0
+
+
     init {
         loadFont(memory, font)
     }
+
+    fun setDelayTimer(timer: Int){
+        this.delayTimer = timer
+    }
+
+    fun getDelayTimer() = this.delayTimer
+
+    fun setSoundTimer(timer: Int){
+        this.soundTimer = timer
+    }
+
+    fun getSoundTimer() = this.soundTimer
 
     fun loadFont(memory: Memory, font: Config.Chip8Font){
         require(font.sprites.size == 80)
@@ -24,5 +45,50 @@ class System(val memory: Memory = Memory(),
         return OpCode(high, low)
     }
 
-    data class OpCode(val high: Byte, val low: Byte)
+    fun startRunning(){
+        running = true
+    }
+
+    fun stopRunning(){
+        running = false
+    }
+
+    fun startTimers(scope: CoroutineScope) {
+        scope.launch {
+            while (running) {
+                if (delayTimer > 0) delayTimer--
+                if (soundTimer > 0) soundTimer--
+
+                println("Timers. Delay: $delayTimer Sound:$soundTimer")
+                delay(`60HZ_TIMER`)
+            }
+        }
+    }
+
+    suspend fun startCpu(cyclesPerSecond: Int = 500) {
+        startRunning()
+        val cycleDelay = 1000L / cyclesPerSecond
+
+        while (running) {
+            val opcode = fetchOpcode()
+            cpu.incrementProgramCounter()
+            cpu.execute(opcode)
+            delay(cycleDelay)
+        }
+    }
+
+
+    open class OpCode(val high: Byte, val low: Byte) {
+
+        constructor(n1: Nibble, n2: Nibble, n3: Nibble, n4: Nibble) : this(((n1.value shl 4) or (n2.value and 0xF)).toByte(), ((n3.value shl 4) or (n4.value and 0xF)).toByte())
+
+        fun toNibbles() : List<System.Nibble> {
+            return high.toNibbles().toList().plus(low.toNibbles().toList())
+        }
+    }
+
+    data class Nibble(val value: Int) {
+        operator fun plus(other: Nibble): Byte = ((value shl 4) or (other.value and 0xF)).toByte()
+    }
+
 }

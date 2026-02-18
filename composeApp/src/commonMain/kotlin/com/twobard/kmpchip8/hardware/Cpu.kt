@@ -59,19 +59,49 @@ class Cpu(val systemInterface: SystemInterface) {
             0x4 -> {
                 sne(nibbles[1], nibbles[2] + nibbles[3])
             }
-            0x6 -> load(nibbles[1], nibbles[2] + nibbles[3])
+            0x5 -> {
+                seVxVy(nibbles[1], nibbles[2])
+            }
+            0x6 -> {
+                load(nibbles[1], nibbles[2] + nibbles[3])
+            }
+            0x7 -> {
+                add(nibbles[1], nibbles[2] + nibbles[3])
+            }
+            0x8 -> {
+                when(nibbles[3].value) {
+                    0x0 -> {
+                        setVxVy(nibbles[1], nibbles[2])
+                    }
+                }
+            }
         }
     }
 
+    //Set Vx = Vy. Stores the value of register Vy in register Vx.
+    fun setVxVy(x: Nibble, y: Nibble){
+        registers[x.value] = registers[y.value]
+    }
+
+    //Set Vx = Vx + kk. Adds the value kk to the value of register Vx, then stores the result in Vx.
+    fun add(x: Nibble, kk: Byte) {
+        registers[x.value] = registers[x.value] + kk
+    }
+
+    //Jump to location nnn. The interpreter sets the program counter to nnn.
     fun jump(address1: Nibble, address2: Nibble, address3: Nibble){
         //Jump to location nnn. The interpreter sets the program counter to nnn.
         val address = address1.value + address2.value + address3.value
         programCounter = address
     }
 
-
+    //Set Vx = kk. The interpreter puts the value kk into register Vx.
     fun load(dest: Nibble, value: Byte){
         registers[dest.value] = value.toUnsignedInt()
+    }
+
+    fun seVxVy(vX: Nibble, vY: Nibble){
+       se(vX, registers[vY.value].toByte())
     }
 
     fun se(dest: Nibble, value: Byte){
@@ -90,8 +120,8 @@ class Cpu(val systemInterface: SystemInterface) {
         programCounter += 2
     }
 
-    fun setRegisterData(value: Int, kk: Pair<Nibble, Nibble>) {
-        registers[value] = kk.asByte().toUnsignedInt()
+    fun setRegisterData(index: Int, kk: Pair<Nibble, Nibble>) {
+        registers[index] = kk.asByte().toUnsignedInt()
     }
 
 

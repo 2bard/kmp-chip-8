@@ -1,6 +1,7 @@
 package com.twobard.kmpchip8
 
 import com.twobard.kmpchip8.Utils.Companion.toNibbles
+import com.twobard.kmpchip8.Utils.Companion.toUnsignedInt
 import com.twobard.kmpchip8.hardware.Config
 import com.twobard.kmpchip8.hardware.Nibble
 import com.twobard.kmpchip8.hardware.System
@@ -142,5 +143,69 @@ class OpCodeTests {
         system.cpu.execute(retOpCode)
 
         assertEquals(Config.PROGRAM_COUNTER_INIT + 2, system.cpu.getProgramCounter())
+    }
+
+    @Test
+    fun `given 5xy0 when Vx == Vy then program counter increments`() {
+
+        val value = 255.toByte().toNibbles()
+        val x = Nibble(0)
+        val y = Nibble(1)
+
+        system.cpu.setRegisterData(x.value, value)
+        system.cpu.setRegisterData(y.value, value)
+
+        val retOpCode = System.OpCode(Nibble(0x5), x ,y, Nibble(0))
+        system.cpu.execute(retOpCode)
+
+        assertEquals(Config.PROGRAM_COUNTER_INIT + 2, system.cpu.getProgramCounter())
+    }
+
+    @Test
+    fun `given 5xy0 when Vx !== Vy then program counter stays the same`() {
+
+        val valueA = 255.toByte().toNibbles()
+        val valueB = 254.toByte().toNibbles()
+        val x = Nibble(0)
+        val y = Nibble(1)
+
+        system.cpu.setRegisterData(x.value, valueA)
+        system.cpu.setRegisterData(y.value, valueB)
+
+        val retOpCode = System.OpCode(Nibble(0x5), x ,y, Nibble(0))
+        system.cpu.execute(retOpCode)
+
+        assertEquals(Config.PROGRAM_COUNTER_INIT, system.cpu.getProgramCounter())
+    }
+
+    @Test
+    fun `given 7xkk when executed then Vx should equal Vx + kk`() {
+
+        val pos = Nibble(0)
+        val existingData = 10.toByte().toNibbles()
+        val data = 20.toByte().toNibbles()
+
+        system.cpu.setRegisterData(pos.value, existingData)
+
+        val retOpCode = System.OpCode(Nibble(0x7), pos ,data.first, data.second)
+        system.cpu.execute(retOpCode)
+
+        assertEquals(30, system.cpu.registers[pos.value])
+    }
+
+    @Test
+    fun `given 8xy0 when executed then Vy should equal Vx`() {
+
+        val x = Nibble(0)
+        val y = Nibble(0)
+        val xData = 10.toByte().toNibbles()
+
+
+        system.cpu.setRegisterData(x.value, xData)
+
+        val retOpCode = System.OpCode(Nibble(0x8), x ,y, Nibble(0x0))
+        system.cpu.execute(retOpCode)
+
+        assertEquals(10, system.cpu.registers[y.value])
     }
 }

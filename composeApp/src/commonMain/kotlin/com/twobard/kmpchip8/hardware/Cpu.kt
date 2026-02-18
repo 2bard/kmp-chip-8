@@ -8,6 +8,7 @@ class Cpu {
     private var stackPointer = 0x0
     private var programCounter = Config.PROGRAM_COUNTER_INIT
 
+    //Stack
     fun call(address: Int){
         stack.addFirst(programCounter)
         stackPointer++
@@ -23,4 +24,8 @@ class Cpu {
     fun getStackPointer() = stackPointer
     fun getProgramCounter() = programCounter
     fun getFromStack(pos: Int) = stack[pos]
+    //End stack
+
+
+
 }

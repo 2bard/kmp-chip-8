@@ -31,11 +31,12 @@ class SystemTests {
 
     @Test
     fun `given a loaded OpCode when fetch first OpCode correct OpCode should be returned`() {
-        system.memory[Config.PROGRAM_COUNTER_INIT] = 255.toByte()
-        system.memory[Config.PROGRAM_COUNTER_INIT + 1] = 255.toByte()
+        val byte1 =  0xFF.toByte()
+        system.memory[Config.PROGRAM_COUNTER_INIT] = byte1
+        system.memory[Config.PROGRAM_COUNTER_INIT + 1] = byte1
 
         val opcode = system.fetchOpcode()
-        assertEquals(System.OpCode(255.toByte(), 255.toByte()), opcode)
+        assertEquals(System.OpCode(byte1, byte1), opcode)
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)

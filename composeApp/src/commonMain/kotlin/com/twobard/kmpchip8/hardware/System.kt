@@ -91,7 +91,7 @@ class System(val memory: Memory = Memory(),
     }
 
 
-    open class OpCode(val high: Byte, val low: Byte) {
+    data class OpCode(val high: Byte, val low: Byte) {
 
         constructor(n1: Nibble, n2: Nibble, n3: Nibble, n4: Nibble) : this(((n1.value shl 4) or (n2.value and 0xF)).toByte(), ((n3.value shl 4) or (n4.value and 0xF)).toByte())
 

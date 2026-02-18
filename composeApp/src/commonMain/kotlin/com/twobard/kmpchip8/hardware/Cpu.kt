@@ -1,5 +1,6 @@
 package com.twobard.kmpchip8.hardware
 
+import com.twobard.kmpchip8.Utils.Companion.asByte
 import com.twobard.kmpchip8.Utils.Companion.toUnsignedInt
 
 interface SystemInterface {
@@ -49,11 +50,21 @@ class Cpu(val systemInterface: SystemInterface) {
             0x1 -> {
                 jump(nibbles[1], nibbles[2], nibbles[3])
             }
+            0x2 -> {
+                call(nibbles[1].value + nibbles[2].value + nibbles[3].value)
+            }
+            0x3 -> {
+                se(nibbles[1], nibbles[2] + nibbles[3])
+            }
+            0x4 -> {
+                sne(nibbles[1], nibbles[2] + nibbles[3])
+            }
             0x6 -> load(nibbles[1], nibbles[2] + nibbles[3])
         }
     }
 
     fun jump(address1: Nibble, address2: Nibble, address3: Nibble){
+        //Jump to location nnn. The interpreter sets the program counter to nnn.
         val address = address1.value + address2.value + address3.value
         programCounter = address
     }
@@ -63,8 +74,24 @@ class Cpu(val systemInterface: SystemInterface) {
         registers[dest.value] = value.toUnsignedInt()
     }
 
+    fun se(dest: Nibble, value: Byte){
+        if(registers[dest.value] == value.toUnsignedInt()){
+            incrementProgramCounter()
+        }
+    }
+
+    fun sne(dest: Nibble, value: Byte){
+        if(registers[dest.value] != value.toUnsignedInt()){
+            incrementProgramCounter()
+        }
+    }
+
     fun incrementProgramCounter() {
         programCounter += 2
+    }
+
+    fun setRegisterData(value: Int, kk: Pair<Nibble, Nibble>) {
+        registers[value] = kk.asByte().toUnsignedInt()
     }
 
 

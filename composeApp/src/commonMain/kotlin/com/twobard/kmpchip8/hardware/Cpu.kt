@@ -82,9 +82,21 @@ class Cpu(val systemInterface: SystemInterface) {
                     0x3 -> {
                         xorVxVy(nibbles[1], nibbles[2])
                     }
+                    0x4 -> {
+                        addVxVy(nibbles[1], nibbles[2])
+                    }
                 }
             }
         }
+    }
+
+    //Set Vx = Vx + Vy, set VF = carry. The values of Vx and Vy are added together. If the result is greater
+    //than 8 bits (i.e., ¿ 255,) VF is set to 1, otherwise 0. Only the lowest 8 bits of the result are kept, and stored
+    //in Vx.
+    fun addVxVy(x: Nibble, y: Nibble){
+        val newValue = registers[x.value] + registers[y.value]
+        registers[x.value] = newValue.toUByte().toInt()
+        registers[0xF] = if(newValue > 255) 1 else 0
     }
 
     //Set Vx = Vx XOR Vy. Performs a bitwise exclusive OR on the values of Vx and Vy, then stores the result

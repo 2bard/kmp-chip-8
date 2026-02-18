@@ -88,9 +88,43 @@ class Cpu(val systemInterface: SystemInterface) {
                     0x5 -> {
                         subVxVy(nibbles[1], nibbles[2])
                     }
+                    0x6 -> {
+                        shrVxVy(nibbles[1], nibbles[2])
+                    }
+                    0x7 -> {
+                        subnVxVy(nibbles[1], nibbles[2])
+                    }
+                    0x8 -> {
+                        shlVxVy(nibbles[1], nibbles[2])
+                    }
                 }
             }
         }
+    }
+
+    //Set Vx = Vx SHL 1. If the most-significant bit of Vx is 1, then VF is set to 1, otherwise to 0. Then Vx is
+    //multiplied by 2.
+    fun shlVxVy(x: Nibble, y: Nibble){
+        val vx = registers[x.value]
+        registers[0xF] = (vx shr 7) and 0x1
+        registers[x.value] = (vx shl 1) and 0xFF
+    }
+
+    //Set Vx = Vy - Vx, set VF = NOT borrow. If Vy ¿ Vx, then VF is set to 1, otherwise 0. Then Vx is
+    //subtracted from Vy, and the results stored in Vx.
+    fun subnVxVy(x: Nibble, y: Nibble){
+        val vx = registers[x.value]
+        val vy = registers[y.value]
+        registers[0xF] = if (vy >= vx) 1 else 0
+        registers[x.value] = (vy - vx) and 0xFF
+    }
+
+    //Set Vx = Vx SHR 1. If the least-significant bit of Vx is 1, then VF is set to 1, otherwise 0. Then Vx is
+    //divided by 2.
+    fun shrVxVy(x: Nibble, y: Nibble){
+        val vx = registers[x.value]
+        registers[0xF] = vx and 1
+        registers[x.value] = vx shr 1
     }
 
     //Set Vx = Vx - Vy, set VF = NOT borrow. If Vx ¿ Vy, then VF is set to 1, otherwise 0. Then Vy is

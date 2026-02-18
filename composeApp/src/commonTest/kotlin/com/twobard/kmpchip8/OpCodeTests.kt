@@ -434,4 +434,120 @@ class OpCodeTests {
         //borrow
         assertEquals(0, system.cpu.registers[0xf])
     }
+
+    @Test
+    fun `given 8xy6 when x is 7 and then Vx is 3 and VF is 1`() {
+
+        val x = Nibble(0)
+        val y = Nibble(0)
+        val xData = 7.toByte().toNibbles()
+
+        system.cpu.setRegisterData(x.value, xData)
+
+        val retOpCode = System.OpCode(Nibble(0x8), x ,y, Nibble(0x6))
+        system.cpu.execute(retOpCode)
+
+        //7 shr 2 = 3 (divided by two)
+        assertEquals(3, system.cpu.registers[x.value])
+
+        // VF = LSB of Vx
+        assertEquals(1, system.cpu.registers[0xf])
+    }
+
+    @Test
+    fun `given 8xy6 when x is 10 and then Vx is 5 and VF is 0`() {
+
+        val x = Nibble(0)
+        val y = Nibble(0)
+        val xData = 10.toByte().toNibbles()
+
+        system.cpu.setRegisterData(x.value, xData)
+
+        val retOpCode = System.OpCode(Nibble(0x8), x ,y, Nibble(0x6))
+        system.cpu.execute(retOpCode)
+
+        //10 shr 2 = 5 (divided by two)
+        assertEquals(5, system.cpu.registers[x.value])
+
+        // VF = LSB of Vx
+        assertEquals(0, system.cpu.registers[0xf])
+    }
+
+    @Test
+    fun `given 8xy7 when x is 5 and y is 10 then Vx is 5 and VF is 1`() {
+
+        val x = Nibble(0)
+        val y = Nibble(1)
+        val xData = 5.toByte().toNibbles()
+        val yData = 10.toByte().toNibbles()
+
+        system.cpu.setRegisterData(x.value, xData)
+        system.cpu.setRegisterData(y.value, yData)
+
+        val retOpCode = System.OpCode(Nibble(0x8), x ,y, Nibble(0x7))
+        system.cpu.execute(retOpCode)
+
+        //10 - 5 = 5
+        assertEquals(5, system.cpu.registers[x.value])
+
+        // VF = 1 if Vy >= Vx (no borrow), else 0
+        assertEquals(1, system.cpu.registers[0xf])
+    }
+
+    @Test
+    fun `given 8xy7 when x is 10 and y is 5 then Vx is 251 and VF is 0`() {
+
+        val x = Nibble(0)
+        val y = Nibble(1)
+        val xData = 10.toByte().toNibbles()
+        val yData = 5.toByte().toNibbles()
+
+        system.cpu.setRegisterData(x.value, xData)
+        system.cpu.setRegisterData(y.value, yData)
+
+        val retOpCode = System.OpCode(Nibble(0x8), x ,y, Nibble(0x7))
+        system.cpu.execute(retOpCode)
+
+        //5 - 10 = 251 (with wraparound)
+        assertEquals(251, system.cpu.registers[x.value])
+
+        // VF = 0 becayse Vy < Vx
+        assertEquals(0, system.cpu.registers[0xf])
+    }
+
+    @Test
+    fun `given 8xy8 when x is 10 then result Vx is 20 and VF is 0`() {
+
+        val x = Nibble(0)
+        val xData = 10.toByte().toNibbles()
+
+        system.cpu.setRegisterData(x.value, xData)
+
+        val retOpCode = System.OpCode(Nibble(0x8), x ,Nibble(0x0), Nibble(0x8))
+        system.cpu.execute(retOpCode)
+
+        //10 x 2 = 20
+        assertEquals(20, system.cpu.registers[x.value])
+
+        // VF = 0 (no overflow)
+        assertEquals(0, system.cpu.registers[0xf])
+    }
+
+    @Test
+    fun `given 8xy8 when x is 200 then result Vx is 144 and VF is 1`() {
+
+        val x = Nibble(0)
+        val xData = 200.toByte().toNibbles()
+
+        system.cpu.setRegisterData(x.value, xData)
+
+        val retOpCode = System.OpCode(Nibble(0x8), x ,Nibble(0x0), Nibble(0x8))
+        system.cpu.execute(retOpCode)
+
+        //200 x 2 = 400. 400 % 256 = 144
+        assertEquals(144, system.cpu.registers[x.value])
+
+        // VF = 1 (overflows)
+        assertEquals(1, system.cpu.registers[0xf])
+    }
 }

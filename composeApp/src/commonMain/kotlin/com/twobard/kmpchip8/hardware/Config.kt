@@ -3,13 +3,19 @@ package com.twobard.kmpchip8.hardware
 class Config {
 
     companion object {
-        //Based on the guide at https://tobiasvl.github.io/blog/write-a-chip-8-emulator/
+        //Based on https://www.cs.columbia.edu/~sedwards/classes/2016/4840-spring/designs/Chip8.pdf
 
-        val romStart = 0x200
-        val DEFAULT_FONT = Chip8Font()
+        //"All of the supported programs will start at memory location 0x200"
+        val PROGRAM_COUNTER_INIT = 0x200
+        val DEFAULT_FONT = DefaultChip8Font()
     }
 
-    data class Chip8Font(val sprites: List<Int> = listOf(
+    interface Chip8Font {
+        val sprites: List<Int>
+    }
+
+    data class DefaultChip8Font(
+        override val sprites: List<Int> = listOf(
         0xf0, 0x90, 0x90, 0x90, 0xf0, // 8
         0x20, 0x60, 0x20, 0x20, 0x70, // 9
         0xf0, 0x10, 0xf0, 0x80, 0xf0, // 0
@@ -26,5 +32,5 @@ class Config {
         0xe0, 0x90, 0x90, 0x90, 0xe0, // F
         0xf0, 0x80, 0xf0, 0x80, 0xf0, // 6
         0xf0, 0x80, 0xf0, 0x80, 0x80  // 7
-    ))
+    )) : Chip8Font
 }

@@ -85,9 +85,25 @@ class Cpu(val systemInterface: SystemInterface) {
                     0x4 -> {
                         addVxVy(nibbles[1], nibbles[2])
                     }
+                    0x5 -> {
+                        subVxVy(nibbles[1], nibbles[2])
+                    }
                 }
             }
         }
+    }
+
+    //Set Vx = Vx - Vy, set VF = NOT borrow. If Vx ¿ Vy, then VF is set to 1, otherwise 0. Then Vy is
+    //subtracted from Vx, and the results stored in Vx.
+    fun subVxVy(x: Nibble, y: Nibble){
+        val vx = registers[x.value]
+        val vy = registers[y.value]
+
+        //Set VF = 1 if Vx >= Vy (no borrow), else 0
+        registers[0xF] = if (vx >= vy) 1 else 0
+
+        //use mod to ensure value is always positive
+        registers[x.value] = (vx - vy + 256) % 256
     }
 
     //Set Vx = Vx + Vy, set VF = carry. The values of Vx and Vy are added together. If the result is greater

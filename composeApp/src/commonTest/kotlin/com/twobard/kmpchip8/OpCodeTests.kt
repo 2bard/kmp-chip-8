@@ -392,4 +392,46 @@ class OpCodeTests {
         //Carry is 1
         assertEquals(1, system.cpu.registers[0xf])
     }
+
+    @Test
+    fun `given 8xy5 when x is 10 and y is 5 then Vx is 5 and VF is 1`() {
+
+        val x = Nibble(0)
+        val y = Nibble(1)
+        val xData = 10.toByte().toNibbles()
+        val yData = 5.toByte().toNibbles()
+
+        system.cpu.setRegisterData(x.value, xData)
+        system.cpu.setRegisterData(y.value, yData)
+
+        val retOpCode = System.OpCode(Nibble(0x8), x ,y, Nibble(0x5))
+        system.cpu.execute(retOpCode)
+
+        //10 SUB 5 = 5 (no borrow)
+        assertEquals(5, system.cpu.registers[x.value])
+
+        //no borrow
+        assertEquals(1, system.cpu.registers[0xf])
+    }
+
+    @Test
+    fun `given 8xy5 when x is 5 and y is 10 then Vx is 251 and VF is 0`() {
+
+        val x = Nibble(0)
+        val y = Nibble(1)
+        val xData = 5.toByte().toNibbles()
+        val yData = 10.toByte().toNibbles()
+
+        system.cpu.setRegisterData(x.value, xData)
+        system.cpu.setRegisterData(y.value, yData)
+
+        val retOpCode = System.OpCode(Nibble(0x8), x ,y, Nibble(0x5))
+        system.cpu.execute(retOpCode)
+
+        //5 SUB 10 = 251 (borrow)
+        assertEquals(251, system.cpu.registers[x.value])
+
+        //borrow
+        assertEquals(0, system.cpu.registers[0xf])
+    }
 }

@@ -18,5 +18,9 @@ class Utils {
 
             return Nibble(high) to Nibble(low)
         }
+
+        fun Pair<Nibble, Nibble>.asByte(): Byte {
+            return ((first.value shl 4) or (second.value and 0xF)).toByte()
+        }
     }
 }

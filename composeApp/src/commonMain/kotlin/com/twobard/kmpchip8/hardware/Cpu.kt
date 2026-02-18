@@ -1,5 +1,7 @@
 package com.twobard.kmpchip8.hardware
 
+import com.twobard.kmpchip8.Utils.Companion.toUnsignedInt
+
 class Cpu {
 
     //"a 64-byte stack with 8-bit stack pointer"
@@ -31,13 +33,22 @@ class Cpu {
     fun execute(opcode: System.OpCode) {
         val nibbles = opcode.toNibbles()
 
-        if(nibbles[0].value == 0x6){
-            load(nibbles[1], nibbles[2] + nibbles[3])
+        when(nibbles[0].value) {
+            0x0 -> {
+                if(nibbles[2] + nibbles[3] == 0xE0.toByte()){
+                    clearDisplay()
+                }
+            }
+            0x6 -> load(nibbles[1], nibbles[2] + nibbles[3])
         }
     }
 
-    fun load(dest: System.Nibble, value: Byte){
+    fun clearDisplay(){
+        println("clearing display")
+    }
 
+    fun load(dest: System.Nibble, value: Byte){
+        registers[dest.value] = value.toUnsignedInt()
     }
 
     fun incrementProgramCounter() {

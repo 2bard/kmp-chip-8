@@ -1,5 +1,6 @@
 package com.twobard.kmpchip8.hardware
 
+import com.twobard.kmpchip8.Utils.Companion.asByte
 import com.twobard.kmpchip8.Utils.Companion.toNibbles
 import com.twobard.kmpchip8.Utils.Companion.toUnsignedInt
 import com.twobard.kmpchip8.hardware.Config.Companion.`60HZ_TIMER`
@@ -88,7 +89,7 @@ class System(val memory: Memory = Memory(),
     }
 
     data class Nibble(val value: Int) {
-        operator fun plus(other: Nibble): Byte = ((value shl 4) or (other.value and 0xF)).toByte()
+        operator fun plus(other: Nibble): Byte = Pair(this, other).asByte()
     }
 
 }

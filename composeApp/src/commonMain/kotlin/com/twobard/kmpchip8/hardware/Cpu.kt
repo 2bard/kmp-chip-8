@@ -71,15 +71,45 @@ class Cpu(val systemInterface: SystemInterface) {
             0x8 -> {
                 when(nibbles[3].value) {
                     0x0 -> {
-                        setVxVy(nibbles[1], nibbles[2])
+                        ldVxVy(nibbles[1], nibbles[2])
+                    }
+                    0x1 -> {
+                        orVxVy(nibbles[1], nibbles[2])
+                    }
+                    0x2 -> {
+                        andVxVy(nibbles[1], nibbles[2])
+                    }
+                    0x3 -> {
+                        xorVxVy(nibbles[1], nibbles[2])
                     }
                 }
             }
         }
     }
 
+    //Set Vx = Vx XOR Vy. Performs a bitwise exclusive OR on the values of Vx and Vy, then stores the result
+    //in Vx. An exclusive OR compares the corresponding bits from two values, and if the bits are not both the
+    //same, then the corresponding bit in the result is set to 1. Otherwise, it is 0.
+    fun xorVxVy(x: Nibble, y: Nibble){
+        registers[x.value] = registers[x.value] xor registers[y.value]
+    }
+
+    //Set Vx = Vx AND Vy. Performs a bitwise AND on the values of Vx and Vy, then stores the result in Vx.
+    //A bitwise AND compares the corresponding bits from two values, and if both bits are 1, then the same bit
+    //in the result is also 1. Otherwise, it is 0.
+    fun andVxVy(x: Nibble, y: Nibble){
+        registers[x.value] = registers[x.value] and registers[y.value]
+    }
+
+    //Set Vx = Vx OR Vy. Performs a bitwise OR on the values of Vx and Vy, then stores the result in Vx. A
+    //bitwise OR compares the corresponding bits from two values, and if either bit is 1, then the same bit in the
+    //result is also 1. Otherwise, it is 0.
+    fun orVxVy(x: Nibble, y: Nibble){
+        registers[x.value] = registers[x.value] or registers[y.value]
+    }
+
     //Set Vx = Vy. Stores the value of register Vy in register Vx.
-    fun setVxVy(x: Nibble, y: Nibble){
+    fun ldVxVy(x: Nibble, y: Nibble){
         registers[x.value] = registers[y.value]
     }
 

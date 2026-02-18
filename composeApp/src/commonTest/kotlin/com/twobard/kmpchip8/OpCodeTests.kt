@@ -194,18 +194,106 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given 8xy0 when executed then Vy should equal Vx`() {
+    fun `given 8xy0 when executed then Vx should equal Vy`() {
 
         val x = Nibble(0)
-        val y = Nibble(0)
+        val y = Nibble(1)
         val xData = 10.toByte().toNibbles()
+        val yData = 20.toByte().toNibbles()
 
-
-        system.cpu.setRegisterData(x.value, xData)
+        system.cpu.setRegisterData(y.value, yData)
 
         val retOpCode = System.OpCode(Nibble(0x8), x ,y, Nibble(0x0))
         system.cpu.execute(retOpCode)
 
-        assertEquals(10, system.cpu.registers[y.value])
+        assertEquals(20, system.cpu.registers[x.value])
+    }
+
+    @Test
+    fun `given 8xy1 when x is 170 and y is 85 then Vx is 255`() {
+
+        val x = Nibble(0)
+        val y = Nibble(1)
+        val xData = 170.toByte().toNibbles()
+        val yData = 85.toByte().toNibbles()
+
+        system.cpu.setRegisterData(x.value, xData)
+        system.cpu.setRegisterData(y.value, yData)
+
+
+        val retOpCode = System.OpCode(Nibble(0x8), x ,y, Nibble(0x1))
+        system.cpu.execute(retOpCode)
+
+        assertEquals(255, system.cpu.registers[x.value])
+    }
+
+    @Test
+    fun `given 8xy1 when x is 255 and y is 128 then Vx is 255`() {
+
+        val x = Nibble(0)
+        val y = Nibble(1)
+        val xData = 255.toByte().toNibbles()
+        val yData = 128.toByte().toNibbles()
+
+        system.cpu.setRegisterData(x.value, xData)
+        system.cpu.setRegisterData(y.value, yData)
+
+        val retOpCode = System.OpCode(Nibble(0x8), x ,y, Nibble(0x1))
+        system.cpu.execute(retOpCode)
+
+        assertEquals(255, system.cpu.registers[x.value])
+    }
+
+    @Test
+    fun `given 8xy1 when x is 0 and y is 0 then Vx is 0`() {
+
+        val x = Nibble(0)
+        val y = Nibble(1)
+        val xData = 0.toByte().toNibbles()
+        val yData = 0.toByte().toNibbles()
+
+        system.cpu.setRegisterData(x.value, xData)
+        system.cpu.setRegisterData(y.value, yData)
+
+        val retOpCode = System.OpCode(Nibble(0x8), x ,y, Nibble(0x1))
+        system.cpu.execute(retOpCode)
+
+        assertEquals(0, system.cpu.registers[x.value])
+    }
+
+    @Test
+    fun `given 8xy2 when x is 170 and y is 85 then Vx is 255`() {
+
+        val x = Nibble(0)
+        val y = Nibble(1)
+        val xData = 51.toByte().toNibbles()
+        val yData = 85.toByte().toNibbles()
+
+        system.cpu.setRegisterData(x.value, xData)
+        system.cpu.setRegisterData(y.value, yData)
+
+        val retOpCode = System.OpCode(Nibble(0x8), x ,y, Nibble(0x2))
+        system.cpu.execute(retOpCode)
+
+        //51 AND 85 = 17
+        assertEquals(17, system.cpu.registers[x.value])
+    }
+
+    @Test
+    fun `given 8xy2 when x is 255 and y is 128 then Vx is 128`() {
+
+        val x = Nibble(0)
+        val y = Nibble(1)
+        val xData = 255.toByte().toNibbles()
+        val yData = 128.toByte().toNibbles()
+
+        system.cpu.setRegisterData(x.value, xData)
+        system.cpu.setRegisterData(y.value, yData)
+
+        val retOpCode = System.OpCode(Nibble(0x8), x ,y, Nibble(0x2))
+        system.cpu.execute(retOpCode)
+
+        //288 AND 128 = 128
+        assertEquals(128, system.cpu.registers[x.value])
     }
 }

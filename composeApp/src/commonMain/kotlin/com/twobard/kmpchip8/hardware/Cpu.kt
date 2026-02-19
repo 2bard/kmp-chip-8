@@ -7,6 +7,7 @@ interface SystemInterface {
     fun getFrameBuffer() : FrameBuffer
     fun getMemory() : Memory
     fun getDisplay() : Display
+    fun getKeyboard() : KeyboardInterface
 }
 
 class Cpu {
@@ -133,6 +134,33 @@ class Cpu {
             0xD  -> {
                 dxyn(nibbles[1], nibbles[2], nibbles[3])
             }
+            0xE  -> {
+                when(nibbles[3].value) {
+                    0xE -> {
+                        skp(nibbles[1])
+                    }
+                    0x1 -> {
+                        sknp(nibbles[1])
+                    }
+                }
+
+            }
+        }
+    }
+
+    fun sknp(n1: Nibble) {
+        systemInterface.getKeyboard().getKeyAt(n1.value).let {
+            if(!it) {
+                incrementProgramCounter()
+            }
+        }
+    }
+
+    fun skp(n1: Nibble) {
+        systemInterface.getKeyboard().getKeyAt(n1.value).let {
+            if(it) {
+                incrementProgramCounter()
+            }
         }
     }
 
@@ -151,10 +179,6 @@ class Cpu {
 
         fun getSpriteAt(x: Int, y: Int) : Boolean {
             return systemInterface.getFrameBuffer().buffer[x][y]
-        }
-
-        fun collisionAt(x: Int, y: Int) : Boolean {
-            return getSpriteAt(x, y) == true
         }
 
         fun setSpriteAt(item: Boolean, x: Int, y: Int) {

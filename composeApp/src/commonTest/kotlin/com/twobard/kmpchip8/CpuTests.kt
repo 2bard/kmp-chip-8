@@ -4,9 +4,11 @@ import com.twobard.kmpchip8.hardware.Config
 import com.twobard.kmpchip8.hardware.Cpu
 import com.twobard.kmpchip8.hardware.Display
 import com.twobard.kmpchip8.hardware.FrameBuffer
+import com.twobard.kmpchip8.hardware.KeyboardInterface
 import com.twobard.kmpchip8.hardware.Memory
 import com.twobard.kmpchip8.hardware.System
 import com.twobard.kmpchip8.hardware.SystemInterface
+import com.twobard.kmpchip8.ui.Keyboard
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -32,6 +34,10 @@ class CpuTests {
 
             override fun getDisplay(): Display {
                 return Display()
+            }
+
+            override fun getKeyboard(): KeyboardInterface {
+                return com.twobard.kmpchip8.hardware.Keyboard()
             }
         })
     }

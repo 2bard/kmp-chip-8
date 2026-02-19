@@ -4,12 +4,14 @@ package com.twobard.kmpchip8.hardware
 import com.twobard.kmpchip8.Utils.Companion.toNibbles
 import com.twobard.kmpchip8.Utils.Companion.toUnsignedInt
 import com.twobard.kmpchip8.hardware.Config.Companion.`60HZ_TIMER`
+import com.twobard.kmpchip8.hardware.Keyboard
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class System(val memory: Memory = Memory(),
              val frameBuffer: FrameBuffer = FrameBuffer(),
+             var keyboard: KeyboardInterface = Keyboard(),
              val font: Config.Chip8Font = Config.DEFAULT_FONT,
              val display: Display = Display()) {
 
@@ -37,6 +39,10 @@ class System(val memory: Memory = Memory(),
 
                 override fun getDisplay(): Display {
                     return display
+                }
+
+                override fun getKeyboard(): KeyboardInterface {
+                    return keyboard
                 }
             }
         )

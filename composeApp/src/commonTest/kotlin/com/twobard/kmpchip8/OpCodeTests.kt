@@ -3,6 +3,7 @@ package com.twobard.kmpchip8
 import com.twobard.kmpchip8.Utils.Companion.toNibbles
 import com.twobard.kmpchip8.Utils.Companion.toUnsignedInt
 import com.twobard.kmpchip8.hardware.Config
+import com.twobard.kmpchip8.hardware.KeyboardInterface
 import com.twobard.kmpchip8.hardware.Nibble
 import com.twobard.kmpchip8.hardware.System
 import com.twobard.kmpchip8.hardware.combineNibbles
@@ -822,5 +823,92 @@ class OpCodeTests {
         // VF should be 0 (no collision)
         assertEquals(0, system.cpu.registers[0xF])
     }
+
+    @Test
+    fun `given Ex9E when key at Vx is pressed then programCounter should be increased`() {
+
+        val pos = Nibble(0)
+        val existingData = 0.toByte().toNibbles()
+        system.cpu.setRegisterData(0, existingData)
+
+        system.keyboard = object : KeyboardInterface {
+            override fun getKeyAt(pos: Int): Boolean {
+                if(pos == 0){
+                    return true
+                } else {
+                    return false
+                }
+            }
+        }
+
+        val retOpCode = System.OpCode(Nibble(0xE), pos ,Nibble(0x9), Nibble(0xE))
+        system.cpu.execute(retOpCode)
+
+        assertEquals(Config.PROGRAM_COUNTER_INIT + 2, system.cpu.getProgramCounter())
+    }
+
+    @Test
+    fun `given Ex9E when key at Vx is not pressed then programCounter should not be increased`() {
+
+        val pos = Nibble(0)
+        val existingData = 0.toByte().toNibbles()
+        system.cpu.setRegisterData(0, existingData)
+
+        system.keyboard = object : KeyboardInterface {
+            override fun getKeyAt(pos: Int): Boolean {
+                return false
+            }
+        }
+
+        val retOpCode = System.OpCode(Nibble(0xE), pos ,Nibble(0x9), Nibble(0xE))
+        system.cpu.execute(retOpCode)
+
+        assertEquals(Config.PROGRAM_COUNTER_INIT, system.cpu.getProgramCounter())
+    }
+
+    @Test
+    fun `given ExA1 when key at Vx is pressed then programCounter should not be increased`() {
+
+        val pos = Nibble(0)
+        val existingData = 0.toByte().toNibbles()
+        system.cpu.setRegisterData(0, existingData)
+
+        system.keyboard = object : KeyboardInterface {
+            override fun getKeyAt(pos: Int): Boolean {
+                if(pos == 0){
+                    return true
+                } else {
+                    return false
+                }
+            }
+        }
+
+        val retOpCode = System.OpCode(Nibble(0xE), pos ,Nibble(0xA), Nibble(0x1))
+        system.cpu.execute(retOpCode)
+
+        assertEquals(Config.PROGRAM_COUNTER_INIT, system.cpu.getProgramCounter())
+    }
+
+    @Test
+    fun `given ExA1 when key at Vx is not pressed then programCounter should be increased`() {
+
+        val pos = Nibble(0)
+        val existingData = 0.toByte().toNibbles()
+        system.cpu.setRegisterData(0, existingData)
+
+        system.keyboard = object : KeyboardInterface {
+            override fun getKeyAt(pos: Int): Boolean {
+
+                    return false
+
+            }
+        }
+
+        val retOpCode = System.OpCode(Nibble(0xE), pos ,Nibble(0xA), Nibble(0x1))
+        system.cpu.execute(retOpCode)
+
+        assertEquals(Config.PROGRAM_COUNTER_INIT + 2, system.cpu.getProgramCounter())
+    }
+
 
 }

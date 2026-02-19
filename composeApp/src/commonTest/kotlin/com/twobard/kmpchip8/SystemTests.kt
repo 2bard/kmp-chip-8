@@ -7,11 +7,10 @@ import com.twobard.kmpchip8.hardware.System
 import com.twobard.kmpchip8.hardware.combineNibbles
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceTimeBy
-import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlinx.coroutines.test.runTest
 
 class SystemTests {
 
@@ -54,29 +53,29 @@ class SystemTests {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `given a new delay of 60 when 1 second passes then delay should reduce to 0`() = runTest {
-        system.setDelayTimer(60)
-        system.startTimers(this)
-        system.startRunning()
+        system.timer.setDelayTimer(60)
+        system.timer.startTimers(this)
+        system.timer.startRunning()
 
         advanceTimeBy(1000)
 
-        system.stopRunning()
+        system.timer.stopRunning()
 
-        assertEquals(0, system.getDelayTimer())
+        assertEquals(0, system.timer.getDelayTimer())
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `given a new sound timer value of 60 when 1 second passes then sound timer should reduce to 0`() = runTest {
-        system.setSoundTimer(60)
-        system.startTimers(this)
-        system.startRunning()
+        system.timer.setSoundTimer(60)
+        system.timer.startTimers(this)
+        system.timer.startRunning()
 
         advanceTimeBy(1000)
 
-        system.stopRunning()
+        system.timer.stopRunning()
 
-        assertEquals(0, system.getSoundTimer())
+        assertEquals(0, system.timer.getSoundTimer())
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)

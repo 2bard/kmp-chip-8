@@ -12,12 +12,10 @@ import kotlinx.coroutines.launch
 class System(val memory: Memory = Memory(),
              val frameBuffer: FrameBuffer = FrameBuffer(),
              var keyboard: KeyboardInterface = Keyboard(),
+             var timer : Timer = Timer(),
              val font: Config.Chip8Font = Config.DEFAULT_FONT,
              val display: Display = Display()) {
 
-    var running = false
-    private var delayTimer = 0
-    private var soundTimer = 0
 
     var cpu: Cpu
 
@@ -44,21 +42,15 @@ class System(val memory: Memory = Memory(),
                 override fun getKeyboard(): KeyboardInterface {
                     return keyboard
                 }
+
+                override fun getTimer(): Timer {
+                    return timer
+                }
             }
         )
     }
 
-    fun setDelayTimer(timer: Int){
-        this.delayTimer = timer
-    }
 
-    fun getDelayTimer() = this.delayTimer
-
-    fun setSoundTimer(timer: Int){
-        this.soundTimer = timer
-    }
-
-    fun getSoundTimer() = this.soundTimer
 
     fun loadFont(memory: Memory, font: Config.Chip8Font){
         require(font.sprites.size == 80)
@@ -73,37 +65,19 @@ class System(val memory: Memory = Memory(),
         return OpCode(high, low)
     }
 
-    fun startRunning(){
-        running = true
-    }
 
-    fun stopRunning(){
-        running = false
-    }
 
-    fun startTimers(scope: CoroutineScope) {
-        scope.launch {
-            while (running) {
-                if (delayTimer > 0) delayTimer--
-                if (soundTimer > 0) soundTimer--
-
-                println("Timers. Delay: $delayTimer Sound:$soundTimer")
-                delay(`60HZ_TIMER`)
-            }
-        }
-    }
-
-    suspend fun startCpu(cyclesPerSecond: Int = 500) {
-        startRunning()
-        val cycleDelay = 1000L / cyclesPerSecond
-
-        while (running) {
-            val opcode = fetchOpcode()
-            cpu.incrementProgramCounter()
-            cpu.execute(opcode)
-            delay(cycleDelay)
-        }
-    }
+//    suspend fun startCpu(cyclesPerSecond: Int = 500) {
+//        startRunning()
+//        val cycleDelay = 1000L / cyclesPerSecond
+//
+//        while (running) {
+//            val opcode = fetchOpcode()
+//            cpu.incrementProgramCounter()
+//            cpu.execute(opcode)
+//            delay(cycleDelay)
+//        }
+//    }
 
     fun clearDisplay() {
         display.clear()

@@ -8,6 +8,7 @@ interface SystemInterface {
     fun getMemory() : Memory
     fun getDisplay() : Display
     fun getKeyboard() : KeyboardInterface
+    fun getTimer() : Timer
 }
 
 class Cpu {
@@ -135,17 +136,35 @@ class Cpu {
                 dxyn(nibbles[1], nibbles[2], nibbles[3])
             }
             0xE  -> {
-                when(nibbles[3].value) {
+                when (nibbles[3].value) {
                     0xE -> {
                         skp(nibbles[1])
                     }
+
                     0x1 -> {
                         sknp(nibbles[1])
                     }
                 }
-
+            }
+            0xF -> {
+                when (nibbles[3].value) {
+                    0x7 -> {
+                        lddt(nibbles[2])
+                    }
+                    0xA -> {
+                        ldst(nibbles[2])
+                    }
+                }
             }
         }
+    }
+
+    fun lddt(x: Nibble){
+        systemInterface.getTimer().setDelayTimer(registers[x.value])
+    }
+
+    fun ldst(x: Nibble){
+        systemInterface.getTimer().setSoundTimer(registers[x.value])
     }
 
     fun sknp(n1: Nibble) {

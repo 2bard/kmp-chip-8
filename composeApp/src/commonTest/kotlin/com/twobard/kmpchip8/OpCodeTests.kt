@@ -906,8 +906,31 @@ class OpCodeTests {
 
         val retOpCode = System.OpCode(Nibble(0xE), pos ,Nibble(0xA), Nibble(0x1))
         system.cpu.execute(retOpCode)
-
         assertEquals(Config.PROGRAM_COUNTER_INIT + 2, system.cpu.getProgramCounter())
+    }
+
+    @Test
+    fun `given Fx07 when Vx == 100 then delay timer should be set to 100`() {
+
+        val existingData = 100.toByte().toNibbles()
+        val pos = Nibble(0x0)
+        system.cpu.setRegisterData(pos.value, existingData)
+
+        val retOpCode = System.OpCode(Nibble(0xF), pos ,Nibble(0x0), Nibble(0x7))
+        system.cpu.execute(retOpCode)
+        assertEquals(100, system.timer.getDelayTimer())
+    }
+
+    @Test
+    fun `given Fx07 when Vx == 100 then sound timer should be set to 100`() {
+
+        val existingData = 100.toByte().toNibbles()
+        val pos = Nibble(0x0)
+        system.cpu.setRegisterData(pos.value, existingData)
+
+        val retOpCode = System.OpCode(Nibble(0xF), pos ,Nibble(0x0), Nibble(0xA))
+        system.cpu.execute(retOpCode)
+        assertEquals(100, system.timer.getSoundTimer())
     }
 
 

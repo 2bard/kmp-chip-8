@@ -8,6 +8,7 @@ import com.twobard.kmpchip8.hardware.System
 import com.twobard.kmpchip8.hardware.combineNibbles
 import dev.mokkery.verify
 import dev.mokkery.verify.VerifyMode.Companion.atMost
+import kotlin.collections.forEach
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -646,5 +647,44 @@ class OpCodeTests {
         system.cpu.execute(retOpCode)
 
         assertEquals(0x12, system.cpu.registers[n1.value])
+    }
+
+    @Test
+    fun `given Dxyn when x == 10 y == 5 and n == 5 then 4 pixels should turn on`() {
+
+        system.cpu.setIndexRegister(0x300)
+        system.memory[0x300] = combineNibbles(Nibble(0xF), Nibble(0x0)).toByte()
+
+        val x = 10
+        val nibblex = Nibble(x)
+        val y = 5
+        val nibbley = Nibble(y)
+        val n = 1 //1 bite sprite
+
+        system.cpu.setRegisterData(x, Pair(Nibble(0), nibblex))
+        system.cpu.setRegisterData(y, Pair(Nibble(0), nibbley))
+
+
+        val retOpCode = System.OpCode(Nibble(0xD), nibblex , nibbley, Nibble(n))
+        system.cpu.execute(retOpCode)
+
+        assertEquals(0, system.cpu.registers[0xF])
+
+        var pixelsOn = 0
+
+        system.display.matrix.forEach {
+            it.forEach {
+                if(it) {
+                    pixelsOn++
+                }
+            }
+        }
+
+        assertEquals(4, pixelsOn)
+        assertEquals(true, system.display.matrix[10][5])
+        assertEquals(true, system.display.matrix[11][5])
+        assertEquals(true, system.display.matrix[12][5])
+        assertEquals(true, system.display.matrix[13][5])
+
     }
 }

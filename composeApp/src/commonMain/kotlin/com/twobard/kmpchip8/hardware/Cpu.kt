@@ -158,6 +158,7 @@ class Cpu {
         }
 
         fun setSpriteAt(item: Boolean, x: Int, y: Int) {
+            println("Setting sprite at [$x][$y] to $item")
             systemInterface.getFrameBuffer().buffer[x][y] = item
         }
 
@@ -173,12 +174,14 @@ class Cpu {
                 val x = (xStart + bit) % displayWidth
                 val y = (yStart + row) % displayHeight
 
-                if (collisionAt(x, y)) {
-                    registers[0xF] = 1  // Collision: pixel will be erased
+                val oldPixel = getSpriteAt(x, y)
+                val newPixel = oldPixel xor true
+
+                if (oldPixel && !newPixel) {
+                    registers[0xF] = 1
                 }
 
-                val spriteOn = getSpriteAt(x, y) xor true
-                setSpriteAt(spriteOn, x, y)
+                setSpriteAt(newPixel, x, y)
             }
         }
 
@@ -313,6 +316,10 @@ class Cpu {
         if(registers[dest.value] != value){
             incrementProgramCounter()
         }
+    }
+
+    fun setIndexRegister(newValue: Int) {
+        indexRegister = newValue
     }
 
     fun incrementProgramCounter() {

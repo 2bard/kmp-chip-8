@@ -650,7 +650,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given Dxyn when x == 10 y == 5 and n == 5 then 4 pixels should turn on`() {
+    fun `given Dxyn when Vx == 10 Vy == 5 and n == 5 then 4 pixels should turn on`() {
 
         system.cpu.setIndexRegister(0x300)
         system.memory[0x300] = combineNibbles(Nibble(0xF), Nibble(0x0)).toByte()
@@ -685,6 +685,142 @@ class OpCodeTests {
         assertEquals(true, system.display.matrix[11][5])
         assertEquals(true, system.display.matrix[12][5])
         assertEquals(true, system.display.matrix[13][5])
-
     }
+
+    @Test
+    fun `given Dxyn when V1 == 10 V2 == 5 and n == 5 then 3 pixels should turn on and collision == 1`() {
+
+        system.cpu.setIndexRegister(0x300)
+        system.memory[0x300] = combineNibbles(Nibble(0xF), Nibble(0x0)).toByte()
+
+        val x = 10
+        val nibblex = Nibble(x)
+        val y = 5
+        val nibbley = Nibble(y)
+        val n = 1 //1 bite sprite
+
+        system.cpu.setRegisterData(x, Pair(Nibble(0), nibblex))
+        system.cpu.setRegisterData(y, Pair(Nibble(0), nibbley))
+
+        // Manually turn on the third pixel (overlap position)
+        system.cpu.systemInterface.getFrameBuffer().buffer[12][5] = true
+
+        val retOpCode = System.OpCode(Nibble(0xD), nibblex , nibbley, Nibble(n))
+        system.cpu.execute(retOpCode)
+
+
+        var pixelsOn = 0
+
+        system.display.matrix.forEach {
+            it.forEach {
+                if(it) {
+                    pixelsOn++
+                }
+            }
+        }
+
+        assertEquals(3, pixelsOn)
+        assertEquals(true, system.display.matrix[10][5])
+        assertEquals(true, system.display.matrix[11][5])
+        assertEquals(false, system.display.matrix[12][5])//overlapped
+        assertEquals(true, system.display.matrix[13][5])
+        assertEquals(false, system.display.matrix[14][5])
+
+        // VF should be 1 because at least one pixel was erased
+        assertEquals(1,system.cpu.registers[0xF])
+    }
+
+    @Test
+    fun `given Dxyn when Vx == 10 Vy == 5 and n == 2 then pixels should turn on with collision`() {
+
+        system.cpu.setIndexRegister(0x300)
+
+        system.memory[0x300] = 0b11110000.toByte()
+        system.memory[0x301] = 0b00111100.toByte()
+
+        val x = 10
+        val y = 5
+        val nibblex = Nibble(x)
+        val nibbley = Nibble(y)
+        val n = 2 // multi-row sprite
+
+        system.cpu.setRegisterData(x, Pair(Nibble(0), nibblex))   // Vx
+        system.cpu.setRegisterData(y, Pair(Nibble(0), nibbley))   // Vy
+
+        system.cpu.systemInterface.getFrameBuffer().buffer[12][5] = true
+        system.cpu.systemInterface.getFrameBuffer().buffer[13][6] = true
+
+        val retOpCode = System.OpCode(Nibble(0xD), nibblex, nibbley, Nibble(n))
+        system.cpu.execute(retOpCode)
+
+        var pixelsOn = 0
+        system.display.matrix.forEach {
+            it.forEach {
+                if(it) pixelsOn++
+            }
+        }
+
+        // first row
+        assertEquals(true, system.display.matrix[10][5]) // Row 0
+        assertEquals(true, system.display.matrix[11][5])
+        assertEquals(false, system.display.matrix[12][5]) // Overlap → OFF
+        assertEquals(true, system.display.matrix[13][5])
+        assertEquals(false, system.display.matrix[14][5])
+
+        // second row
+        assertEquals(false, system.display.matrix[10][6])
+        assertEquals(false, system.display.matrix[11][6])
+        assertEquals(true, system.display.matrix[12][6])
+        assertEquals(false, system.display.matrix[13][6]) // Overlap → OFF
+        assertEquals(true, system.display.matrix[14][6])
+
+        assertEquals(6, pixelsOn)
+
+        // VF should be 1
+        assertEquals(1, system.cpu.registers[0xF])
+    }
+
+    @Test
+    fun `given Dxyn when sprite exceeds screen boundaries then it wraps correctly`() {
+
+        // Setup
+        system.cpu.setIndexRegister(0x300)
+
+        system.memory[0x300] = 0b11110000.toByte()
+        system.memory[0x301] = 0b00001111.toByte()
+
+        val displayWidth = system.cpu.systemInterface.getFrameBuffer().width
+        val displayHeight = system.cpu.systemInterface.getFrameBuffer().height
+
+        val x = displayWidth - 2
+        val y = displayHeight - 1
+        val nibblex = Nibble(x)
+        val nibbley = Nibble(y)
+        val n = 2
+
+        system.cpu.setRegisterData(0, Pair(Nibble(0), nibblex))   // Vx
+        system.cpu.setRegisterData(0, Pair(Nibble(0), nibbley))   // Vy
+
+        // Create Dxyn opcode
+        val retOpCode = System.OpCode(Nibble(0xD), nibblex, nibbley, Nibble(n))
+        system.cpu.execute(retOpCode)
+
+        val display = system.display.matrix
+
+        // Row 1
+        assertEquals(true, display[0][0])
+        assertEquals(true, display[1][0])
+        assertEquals(true, display[2][0])
+        assertEquals(true, display[3][0])
+
+        //Row 2
+        assertEquals(true, display[4][1])
+        assertEquals(true, display[5][1])
+        assertEquals(true, display[6][1])
+        assertEquals(true, display[7][1])
+
+        // VF should be 0 (no collision)
+        assertEquals(0, system.cpu.registers[0xF])
+    }
+
 }

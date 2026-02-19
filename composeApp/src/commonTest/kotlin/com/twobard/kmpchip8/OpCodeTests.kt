@@ -5,6 +5,7 @@ import com.twobard.kmpchip8.Utils.Companion.toUnsignedInt
 import com.twobard.kmpchip8.hardware.Config
 import com.twobard.kmpchip8.hardware.Nibble
 import com.twobard.kmpchip8.hardware.System
+import com.twobard.kmpchip8.hardware.combineNibbles
 import dev.mokkery.verify
 import dev.mokkery.verify.VerifyMode.Companion.atMost
 import kotlin.test.BeforeTest
@@ -27,12 +28,7 @@ class OpCodeTests {
         val destination = 0xA
         val value = 0x05.toByte().toNibbles()
         val loadOpCode = System.OpCode(Nibble(0x6), Nibble(destination), value.first, value.second)
-        val nibbles = loadOpCode.toNibbles()
         system.cpu.execute(loadOpCode)
-
-        verify(atMost(1)) {
-            system.cpu.load(nibbles.first(), nibbles[1] + nibbles[2])
-        }
 
         assertEquals(0x05, system.cpu.registers[destination])
 
@@ -597,5 +593,39 @@ class OpCodeTests {
         system.cpu.execute(retOpCode)
 
         assertEquals(6, system.cpu.getIndexRegister())
+    }
+
+    @Test
+    fun `given Bnnn when nnn == 6 and V0 == 5 then programCounter == 11`() {
+
+        val n1 = Nibble(0x0)
+        val n2 = Nibble(0x0)
+        val n3 = Nibble(0x6)
+
+        system.cpu.setRegisterData(0, 5.toByte().toNibbles())
+
+        val retOpCode = System.OpCode(Nibble(0xB), n1 ,n2, n3)
+        system.cpu.execute(retOpCode)
+
+        assertEquals(11, system.cpu.getProgramCounter())
+    }
+
+    @Test
+    fun `given Cxkk when x == 7 and kk == F0 and random == 0xF3 then Vx == F0`() {
+
+        val n1 = Nibble(0x7)
+        val n2 = Nibble(0xF)
+        val n3 = Nibble(0x0)
+
+        system.cpu.randomNumberGenerator = object : Utils.RandomNumberGeneratorInterface {
+            override fun getRandom(): Int {
+                return 0xF3
+            }
+        }
+
+        val retOpCode = System.OpCode(Nibble(0xC), n1 ,n2, n3)
+        system.cpu.execute(retOpCode)
+
+        assertEquals(0xF0, system.cpu.registers[n1.value])
     }
 }

@@ -1,19 +1,19 @@
 package com.twobard.kmpchip8.hardware
 
-import com.twobard.kmpchip8.Utils.Companion.asByte
-import com.twobard.kmpchip8.Utils.Companion.toUnsignedInt
+import com.twobard.kmpchip8.Utils
 
 interface SystemInterface {
     fun clearDisplay()
 }
 
-class Cpu(val systemInterface: SystemInterface) {
+class Cpu(val systemInterface: SystemInterface, var randomNumberGenerator: Utils.RandomNumberGeneratorInterface = Utils.RandomNumberGenerator()) {
 
     //"a 64-byte stack with 8-bit stack pointer"
     //using an Int here to avoid autoboxing - better perfomance
     private val stack = ArrayDeque<Int>(16)
     private var stackPointer = 0x0
     private var programCounter = Config.PROGRAM_COUNTER_INIT
+
 
     val registers = IntArray(16)
     private var indexRegister = 0
@@ -43,7 +43,7 @@ class Cpu(val systemInterface: SystemInterface) {
 
         when(nibbles[0].value) {
             0x0 -> {
-                (nibbles[2] + nibbles[3]).toUnsignedInt().let {
+                (combineNibbles(nibbles[2], nibbles[3])).let {
                     when(it) {
                         0xE0 -> systemInterface.clearDisplay()
                         0xEE -> ret()
@@ -57,19 +57,19 @@ class Cpu(val systemInterface: SystemInterface) {
                 call(nibbles[1].value + nibbles[2].value + nibbles[3].value)
             }
             0x3 -> {
-                se(nibbles[1], nibbles[2] + nibbles[3])
+                se(nibbles[1], combineNibbles(nibbles[2], nibbles[3]))
             }
             0x4 -> {
-                sne(nibbles[1], nibbles[2] + nibbles[3])
+                sne(nibbles[1], combineNibbles(nibbles[2], nibbles[3]))
             }
             0x5 -> {
                 seVxVy(nibbles[1], nibbles[2])
             }
             0x6 -> {
-                load(nibbles[1], nibbles[2] + nibbles[3])
+                load(nibbles[1], combineNibbles(nibbles[2], nibbles[3]))
             }
             0x7 -> {
-                add(nibbles[1], nibbles[2] + nibbles[3])
+                add(nibbles[1], combineNibbles(nibbles[2], nibbles[3]))
             }
             0x8 -> {
                 when(nibbles[3].value) {
@@ -108,7 +108,24 @@ class Cpu(val systemInterface: SystemInterface) {
             0xA -> {
                 annn(nibbles[1], nibbles[2], nibbles[3])
             }
+            0xB -> {
+                bnnn(nibbles[1], nibbles[2], nibbles[3])
+            }
+            0xC -> {
+                cxkk(nibbles[1], nibbles[2], nibbles[3])
+            }
         }
+    }
+
+    //Set Vx = random byte AND kk. The interpreter generates a random number from 0 to 255, which is then
+    //ANDed with the value kk. The results are stored in Vx. See instruction 8xy2 for more information on AND.
+    fun cxkk(n1: Nibble, n2: Nibble, n3: Nibble){
+        registers[n1.value] = randomNumberGenerator.getRandom() and combineNibbles(n2, n3)
+    }
+
+    //Jump to location nnn + V0. The program counter is set to nnn plus the value of V0.
+    fun bnnn(n1: Nibble, n2: Nibble, n3: Nibble){
+        programCounter = (combineNibbles(n1, n2, n3)) + registers[0]
     }
 
     //Set I = nnn. The value of register I is set to nnn.
@@ -198,7 +215,7 @@ class Cpu(val systemInterface: SystemInterface) {
     }
 
     //Set Vx = Vx + kk. Adds the value kk to the value of register Vx, then stores the result in Vx.
-    fun add(x: Nibble, kk: Byte) {
+    fun add(x: Nibble, kk: Int) {
         registers[x.value] = registers[x.value] + kk
     }
 
@@ -210,22 +227,22 @@ class Cpu(val systemInterface: SystemInterface) {
     }
 
     //Set Vx = kk. The interpreter puts the value kk into register Vx.
-    fun load(dest: Nibble, value: Byte){
-        registers[dest.value] = value.toUnsignedInt()
+    fun load(dest: Nibble, value: Int){
+        registers[dest.value] = value
     }
 
     fun seVxVy(vX: Nibble, vY: Nibble){
-       se(vX, registers[vY.value].toByte())
+       se(vX, registers[vY.value])
     }
 
-    fun se(dest: Nibble, value: Byte){
-        if(registers[dest.value] == value.toUnsignedInt()){
+    fun se(dest: Nibble, value: Int){
+        if(registers[dest.value] == value){
             incrementProgramCounter()
         }
     }
 
-    fun sne(dest: Nibble, value: Byte){
-        if(registers[dest.value] != value.toUnsignedInt()){
+    fun sne(dest: Nibble, value: Int){
+        if(registers[dest.value] != value){
             incrementProgramCounter()
         }
     }
@@ -235,7 +252,7 @@ class Cpu(val systemInterface: SystemInterface) {
     }
 
     fun setRegisterData(index: Int, kk: Pair<Nibble, Nibble>) {
-        registers[index] = kk.asByte().toUnsignedInt()
+        registers[index] = combineNibbles(kk.first, kk.second)
     }
 
 

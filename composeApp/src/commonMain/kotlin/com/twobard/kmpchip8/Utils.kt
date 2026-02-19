@@ -1,7 +1,10 @@
 package com.twobard.kmpchip8
 
+
+import com.twobard.kmpchip8.Utils.Companion.toUnsignedInt
 import com.twobard.kmpchip8.hardware.Nibble
 import kotlin.experimental.and
+import kotlin.random.Random
 
 class Utils {
 
@@ -19,8 +22,23 @@ class Utils {
             return Nibble(high) to Nibble(low)
         }
 
-        fun Pair<Nibble, Nibble>.asByte(): Byte {
-            return ((first.value shl 4) or (second.value and 0xF)).toByte()
-        }
+
+
+    }
+
+    interface RandomNumberGeneratorInterface {
+        fun getRandom(): Int
+    }
+
+    class RandomNumberGenerator() : RandomNumberGeneratorInterface {
+        override fun getRandom() = Random.nextInt()
     }
 }
+
+//fun Pair<Nibble, Nibble>.asByte(): Byte {
+//    return ((first.value shl 4) or (second.value and 0xF)).toByte()
+//}
+
+//operator fun Int.plus(other: Nibble): Int {
+//    return Pair(Nibble(this), other).asByte().toUnsignedInt()
+//}

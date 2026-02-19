@@ -4,6 +4,7 @@ import com.twobard.kmpchip8.Utils.Companion.toNibbles
 import com.twobard.kmpchip8.hardware.Config
 import com.twobard.kmpchip8.hardware.Nibble
 import com.twobard.kmpchip8.hardware.System
+import com.twobard.kmpchip8.hardware.combineNibbles
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -20,6 +21,17 @@ class SystemTests {
     @BeforeTest
     fun before(){
         system = System()
+    }
+
+    @Test
+    fun `mytest`() {
+        val n1 = Nibble(0x1)
+        val n2 = Nibble(0x2)
+        val n3 = Nibble(0x3)
+
+        val result = combineNibbles(n1, n2, n3)
+
+        assertEquals(0x123, result)
     }
 
     @Test

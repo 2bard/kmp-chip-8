@@ -16,6 +16,7 @@ class Cpu(val systemInterface: SystemInterface) {
     private var programCounter = Config.PROGRAM_COUNTER_INIT
 
     val registers = IntArray(16)
+    private var indexRegister = 0
 
     //Stack
     fun call(address: Int){
@@ -33,6 +34,8 @@ class Cpu(val systemInterface: SystemInterface) {
     fun getStackPointer() = stackPointer
     fun getProgramCounter() = programCounter
     fun getFromStack(pos: Int) = stack[pos]
+    fun getIndexRegister() = indexRegister
+
     //End stack
 
     fun execute(opcode: System.OpCode) {
@@ -102,7 +105,15 @@ class Cpu(val systemInterface: SystemInterface) {
             0x9 -> {
                 sneVxVy(nibbles[1], nibbles[2])
             }
+            0xA -> {
+                annn(nibbles[1], nibbles[2], nibbles[3])
+            }
         }
+    }
+
+    //Set I = nnn. The value of register I is set to nnn.
+    fun annn(n1: Nibble, n2: Nibble, n3: Nibble){
+        indexRegister = n1.value + n2.value + n3.value
     }
 
     //Skip next instruction if Vx != Vy. The values of Vx and Vy are compared, and if they are not equal, the

@@ -565,8 +565,37 @@ class OpCodeTests {
         val retOpCode = System.OpCode(Nibble(0x9), x ,y, Nibble(0x0))
         system.cpu.execute(retOpCode)
 
-
-        // VF = 1 (overflows)
         assertEquals(Config.PROGRAM_COUNTER_INIT + 2, system.cpu.getProgramCounter())
+    }
+
+    @Test
+    fun `given 9xy0 when Vx == Vy then do not increment program counter`() {
+
+        val x = Nibble(0)
+        val xData = 200.toByte().toNibbles()
+        val y = Nibble(1)
+        val yData = 200.toByte().toNibbles()
+
+        system.cpu.setRegisterData(x.value, xData)
+        system.cpu.setRegisterData(y.value, yData)
+
+        val retOpCode = System.OpCode(Nibble(0x9), x ,y, Nibble(0x0))
+        system.cpu.execute(retOpCode)
+
+
+        assertEquals(Config.PROGRAM_COUNTER_INIT, system.cpu.getProgramCounter())
+    }
+
+    @Test
+    fun `given Annn when nnn == 6 then indexRegister == 6`() {
+
+        val n1 = Nibble(0x1)
+        val n2 = Nibble(0x2)
+        val n3 = Nibble(0x3)
+
+        val retOpCode = System.OpCode(Nibble(0xA), n1 ,n2, n3)
+        system.cpu.execute(retOpCode)
+
+        assertEquals(6, system.cpu.getIndexRegister())
     }
 }

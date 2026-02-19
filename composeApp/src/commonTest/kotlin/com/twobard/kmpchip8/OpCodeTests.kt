@@ -628,4 +628,23 @@ class OpCodeTests {
 
         assertEquals(0xF0, system.cpu.registers[n1.value])
     }
+
+    @Test
+    fun `given Cxkk when x == 7 and kk == FF and random == 0x12 then Vx == 0xF  `() {
+
+        val n1 = Nibble(0xF)
+        val n2 = Nibble(0xF)
+        val n3 = Nibble(0xF)
+
+        system.cpu.randomNumberGenerator = object : Utils.RandomNumberGeneratorInterface {
+            override fun getRandom(): Int {
+                return 0x12
+            }
+        }
+
+        val retOpCode = System.OpCode(Nibble(0xC), n1 ,n2, n3)
+        system.cpu.execute(retOpCode)
+
+        assertEquals(0x12, system.cpu.registers[n1.value])
+    }
 }

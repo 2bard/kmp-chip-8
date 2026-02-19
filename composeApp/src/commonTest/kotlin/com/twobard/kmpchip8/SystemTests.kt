@@ -24,7 +24,7 @@ class SystemTests {
     }
 
     @Test
-    fun `mytest`() {
+    fun `given 3 nibbles 0x1 0x2 0x3 when combined then result is 0x123`() {
         val n1 = Nibble(0x1)
         val n2 = Nibble(0x2)
         val n3 = Nibble(0x3)

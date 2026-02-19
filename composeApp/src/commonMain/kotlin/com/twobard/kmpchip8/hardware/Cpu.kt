@@ -4,18 +4,34 @@ import com.twobard.kmpchip8.Utils
 
 interface SystemInterface {
     fun clearDisplay()
+    fun getFrameBuffer() : FrameBuffer
+    fun getMemory() : Memory
+    fun getDisplay() : Display
 }
 
-class Cpu(val systemInterface: SystemInterface, var randomNumberGenerator: Utils.RandomNumberGeneratorInterface = Utils.RandomNumberGenerator()) {
+class Cpu {
+
+    val systemInterface: SystemInterface
+    var randomNumberGenerator: Utils.RandomNumberGeneratorInterface
+
+    constructor(
+        systemInterface: SystemInterface,
+        randomNumberGenerator: Utils.RandomNumberGeneratorInterface = Utils.RandomNumberGenerator()
+    ) {
+        this.systemInterface = systemInterface
+        this.randomNumberGenerator = randomNumberGenerator
+        this.stack = ArrayDeque<Int>(16)
+        this.registers = IntArray(16)
+    }
 
     //"a 64-byte stack with 8-bit stack pointer"
     //using an Int here to avoid autoboxing - better perfomance
-    private val stack = ArrayDeque<Int>(16)
+    private val stack: ArrayDeque<Int>
     private var stackPointer = 0x0
     private var programCounter = Config.PROGRAM_COUNTER_INIT
 
 
-    val registers = IntArray(16)
+    val registers: IntArray
     private var indexRegister = 0
 
     //Stack
@@ -114,7 +130,59 @@ class Cpu(val systemInterface: SystemInterface, var randomNumberGenerator: Utils
             0xC -> {
                 cxkk(nibbles[1], nibbles[2], nibbles[3])
             }
+            0xD  -> {
+                dxyn(nibbles[1], nibbles[2], nibbles[3])
+            }
         }
+    }
+
+    //Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision. The interpreter reads n
+    //bytes from memory, starting at the address stored in I. These bytes are then displayed as sprites on screen
+    //at coordinates (Vx, Vy). Sprites are XOR’d onto the existing screen. If this causes any pixels to be erased,
+    //VF is set to 1, otherwise it is set to 0. If the sprite is positioned so part of it is outside the coordinates of
+    //the display, it wraps around to the opposite side of the screen.
+    fun dxyn(n1: Nibble, n2: Nibble, n3: Nibble){
+        val displayWidth = systemInterface.getFrameBuffer().width
+        val displayHeight = systemInterface.getFrameBuffer().height
+        val xStart = registers[n1.value] % displayWidth
+        val yStart = registers[n2.value] % displayHeight
+        val height = n3.value
+        registers[0xF] = 0  // Reset collision flag
+
+        fun getSpriteAt(x: Int, y: Int) : Boolean {
+            return systemInterface.getFrameBuffer().buffer[x][y]
+        }
+
+        fun collisionAt(x: Int, y: Int) : Boolean {
+            return getSpriteAt(x, y) == true
+        }
+
+        fun setSpriteAt(item: Boolean, x: Int, y: Int) {
+            systemInterface.getFrameBuffer().buffer[x][y] = item
+        }
+
+        for (row in 0 until height) {
+
+            val spriteByte = systemInterface.getMemory()[indexRegister + row].toInt() and 0xFF
+
+            for (bit in 0 until 8) {
+
+                val spritePixel = (spriteByte shr (7 - bit)) and 1
+                if (spritePixel == 0) continue
+
+                val x = (xStart + bit) % displayWidth
+                val y = (yStart + row) % displayHeight
+
+                if (collisionAt(x, y)) {
+                    registers[0xF] = 1  // Collision: pixel will be erased
+                }
+
+                val spriteOn = getSpriteAt(x, y) xor true
+                setSpriteAt(spriteOn, x, y)
+            }
+        }
+
+        systemInterface.getDisplay().display(systemInterface.getFrameBuffer())
     }
 
     //Set Vx = random byte AND kk. The interpreter generates a random number from 0 to 255, which is then

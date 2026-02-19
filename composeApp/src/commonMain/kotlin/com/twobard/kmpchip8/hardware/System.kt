@@ -9,6 +9,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class System(val memory: Memory = Memory(),
+             val frameBuffer: FrameBuffer = FrameBuffer(),
              val font: Config.Chip8Font = Config.DEFAULT_FONT,
              val display: Display = Display()) {
 
@@ -24,6 +25,18 @@ class System(val memory: Memory = Memory(),
             systemInterface = object : SystemInterface {
                 override fun clearDisplay() {
                    display.clear()
+                }
+
+                override fun getFrameBuffer(): FrameBuffer {
+                    return frameBuffer
+                }
+
+                override fun getMemory(): Memory {
+                    return memory
+                }
+
+                override fun getDisplay(): Display {
+                    return display
                 }
             }
         )

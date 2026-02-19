@@ -99,6 +99,17 @@ class Cpu(val systemInterface: SystemInterface) {
                     }
                 }
             }
+            0x9 -> {
+                sneVxVy(nibbles[1], nibbles[2])
+            }
+        }
+    }
+
+    //Skip next instruction if Vx != Vy. The values of Vx and Vy are compared, and if they are not equal, the
+    //program counter is increased by 2.
+    fun sneVxVy(x: Nibble, y: Nibble){
+        if(registers[x.value] != registers[y.value]) {
+            incrementProgramCounter()
         }
     }
 

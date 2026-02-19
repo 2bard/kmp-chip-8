@@ -550,4 +550,23 @@ class OpCodeTests {
         // VF = 1 (overflows)
         assertEquals(1, system.cpu.registers[0xf])
     }
+
+    @Test
+    fun `given 9xy0 when Vx != Vy then increment program counter`() {
+
+        val x = Nibble(0)
+        val xData = 200.toByte().toNibbles()
+        val y = Nibble(1)
+        val yData = 201.toByte().toNibbles()
+
+        system.cpu.setRegisterData(x.value, xData)
+        system.cpu.setRegisterData(y.value, yData)
+
+        val retOpCode = System.OpCode(Nibble(0x9), x ,y, Nibble(0x0))
+        system.cpu.execute(retOpCode)
+
+
+        // VF = 1 (overflows)
+        assertEquals(Config.PROGRAM_COUNTER_INIT + 2, system.cpu.getProgramCounter())
+    }
 }

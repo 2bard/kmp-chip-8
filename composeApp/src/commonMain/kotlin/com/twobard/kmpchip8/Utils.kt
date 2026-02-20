@@ -1,24 +1,18 @@
 package com.twobard.kmpchip8
 
 
-import com.twobard.kmpchip8.Utils.Companion.toUnsignedInt
 import com.twobard.kmpchip8.hardware.Nibble
-import kotlin.experimental.and
 import kotlin.random.Random
 
 class Utils {
 
     companion object {
-        fun Byte.toUnsignedInt() : Int {
-            return this.toInt() and 0xFF
-        }
 
-        fun Byte.toNibbles() : Pair<Nibble,Nibble> {
-            val unsigned = this.toUnsignedInt()
 
+        fun Int.toNibbles() : Pair<Nibble, Nibble> {
+            val unsigned = this and 0xFF
             val high = (unsigned shr 4) and 0x0F
-            val low  = unsigned and 0x0F
-
+            val low = unsigned and 0x0F
             return Nibble(high) to Nibble(low)
         }
 

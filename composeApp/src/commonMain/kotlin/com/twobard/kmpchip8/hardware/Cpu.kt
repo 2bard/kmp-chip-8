@@ -192,7 +192,7 @@ class Cpu {
         log("Opcode->ldivx")
 
         for (i in 0..x.value) {
-            systemInterface.getMemory()[indexRegister + i] = registers[i].toByte()
+            systemInterface.getMemory()[indexRegister + i] = registers[i]
         }
         indexRegister += x.value + 1
     }
@@ -205,9 +205,9 @@ class Cpu {
 
         val value = registers[x.value]  // Get Vx value
 
-        systemInterface.getMemory()[indexRegister] = (value / 100).toByte()
-        systemInterface.getMemory()[indexRegister + 1] = ((value / 10) % 10).toByte()
-        systemInterface.getMemory()[indexRegister + 2] = (value % 10).toByte()
+        systemInterface.getMemory()[indexRegister] = (value / 100)
+        systemInterface.getMemory()[indexRegister + 1] = ((value / 10) % 10)
+        systemInterface.getMemory()[indexRegister + 2] = (value % 10)
     }
 
     //Set I = location of sprite for digit Vx. The value of I is set to the location for the hexadecimal sprite

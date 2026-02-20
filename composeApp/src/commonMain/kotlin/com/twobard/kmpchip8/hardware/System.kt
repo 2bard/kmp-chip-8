@@ -2,18 +2,11 @@ package com.twobard.kmpchip8.hardware
 
 
 import com.twobard.kmpchip8.Utils.Companion.toNibbles
-import com.twobard.kmpchip8.Utils.Companion.toUnsignedInt
-import com.twobard.kmpchip8.hardware.Config.Companion.`60HZ_TIMER`
-import com.twobard.kmpchip8.hardware.Keyboard
 import kmpchip8.composeapp.generated.resources.Res
-import kmpchip8.composeapp.generated.resources.compose_multiplatform
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class System(val memory: Memory = Memory(),
@@ -60,7 +53,7 @@ class System(val memory: Memory = Memory(),
     fun loadFont(memory: Memory, font: Config.Chip8Font){
         require(font.sprites.size == 80)
         font.sprites.forEachIndexed{ index, sprite ->
-            memory[index] = sprite.toByte()
+            memory[index] = sprite
         }
     }
 
@@ -112,9 +105,14 @@ class System(val memory: Memory = Memory(),
         memory.addRom(rom)
     }
 
-    data class OpCode(val high: Byte, val low: Byte) {
+    data class OpCode(val high: Int, val low: Int) {
 
-        constructor(n1: Nibble, n2: Nibble, n3: Nibble, n4: Nibble) : this(((n1.value shl 4) or (n2.value and 0xF)).toByte(), ((n3.value shl 4) or (n4.value and 0xF)).toByte())
+        constructor(n1: Nibble, n2: Nibble, n3: Nibble, n4: Nibble) : this(((n1.value shl 4) or (n2.value and 0xF)), ((n3.value shl 4) or (n4.value and 0xF)))
+
+        init {
+            require(high <= 255)
+            require(low <= 255)
+        }
 
         fun toNibbles() : List<Nibble> {
             return high.toNibbles().toList().plus(low.toNibbles().toList())

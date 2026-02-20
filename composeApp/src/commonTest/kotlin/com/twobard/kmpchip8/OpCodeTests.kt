@@ -26,7 +26,7 @@ class OpCodeTests {
     fun `given a Load opcode when executed then register should have new value at correct destination`() {
 
         val destination = 0xA
-        val value = 0x05.toByte().toNibbles()
+        val value = 0x05.toNibbles()
         val loadOpCode = System.OpCode(Nibble(0x6), Nibble(destination), value.first, value.second)
         system.cpu.execute(loadOpCode)
 
@@ -96,7 +96,7 @@ class OpCodeTests {
     fun `given 3xkk when Vx == kk then increment program counter by 2`() {
 
         val Vx = Nibble(0xA)
-        val kk = 255.toByte().toNibbles()
+        val kk = 255.toNibbles()
 
         //set V(0xA) to 255
 
@@ -112,11 +112,11 @@ class OpCodeTests {
     fun `given 4xkk when Vx == kk then program counter stays the same`() {
 
         val Vx = Nibble(0xA)
-        val kk = 255.toByte().toNibbles()
+        val kk = 255.toNibbles()
 
         //set V(0xA) to 255
 
-        system.cpu.setRegisterData(Vx.value, 255.toByte().toNibbles())
+        system.cpu.setRegisterData(Vx.value, 255.toNibbles())
 
         val retOpCode = System.OpCode(Nibble(0x4), Vx ,kk.first, kk.second)
         system.cpu.execute(retOpCode)
@@ -128,11 +128,11 @@ class OpCodeTests {
     fun `given 4xkk when Vx !== kk then program counter stays the same`() {
 
         val Vx = Nibble(0xA)
-        val kk = 255.toByte().toNibbles()
+        val kk = 255.toNibbles()
 
         //set V(0xA) to 255
 
-        system.cpu.setRegisterData(Vx.value, 254.toByte().toNibbles())
+        system.cpu.setRegisterData(Vx.value, 254.toNibbles())
 
         val retOpCode = System.OpCode(Nibble(0x4), Vx ,kk.first, kk.second)
         system.cpu.execute(retOpCode)
@@ -143,7 +143,7 @@ class OpCodeTests {
     @Test
     fun `given 5xy0 when Vx == Vy then program counter increments`() {
 
-        val value = 255.toByte().toNibbles()
+        val value = 255.toNibbles()
         val x = Nibble(0)
         val y = Nibble(1)
 
@@ -159,8 +159,8 @@ class OpCodeTests {
     @Test
     fun `given 5xy0 when Vx !== Vy then program counter stays the same`() {
 
-        val valueA = 255.toByte().toNibbles()
-        val valueB = 254.toByte().toNibbles()
+        val valueA = 255.toNibbles()
+        val valueB = 254.toNibbles()
         val x = Nibble(0)
         val y = Nibble(1)
 
@@ -177,8 +177,8 @@ class OpCodeTests {
     fun `given 7xkk when executed then Vx should equal Vx + kk`() {
 
         val pos = Nibble(0)
-        val existingData = 10.toByte().toNibbles()
-        val data = 20.toByte().toNibbles()
+        val existingData = 10.toNibbles()
+        val data = 20.toNibbles()
 
         system.cpu.setRegisterData(pos.value, existingData)
 
@@ -193,8 +193,8 @@ class OpCodeTests {
 
         val x = Nibble(0)
         val y = Nibble(1)
-        val xData = 10.toByte().toNibbles()
-        val yData = 20.toByte().toNibbles()
+        val xData = 10.toNibbles()
+        val yData = 20.toNibbles()
 
         system.cpu.setRegisterData(y.value, yData)
 
@@ -209,8 +209,8 @@ class OpCodeTests {
 
         val x = Nibble(0)
         val y = Nibble(1)
-        val xData = 170.toByte().toNibbles()
-        val yData = 85.toByte().toNibbles()
+        val xData = 170.toNibbles()
+        val yData = 85.toNibbles()
 
         system.cpu.setRegisterData(x.value, xData)
         system.cpu.setRegisterData(y.value, yData)
@@ -227,8 +227,8 @@ class OpCodeTests {
 
         val x = Nibble(0)
         val y = Nibble(1)
-        val xData = 255.toByte().toNibbles()
-        val yData = 128.toByte().toNibbles()
+        val xData = 255.toNibbles()
+        val yData = 128.toNibbles()
 
         system.cpu.setRegisterData(x.value, xData)
         system.cpu.setRegisterData(y.value, yData)
@@ -244,8 +244,8 @@ class OpCodeTests {
 
         val x = Nibble(0)
         val y = Nibble(1)
-        val xData = 0.toByte().toNibbles()
-        val yData = 0.toByte().toNibbles()
+        val xData = 0.toNibbles()
+        val yData = 0.toNibbles()
 
         system.cpu.setRegisterData(x.value, xData)
         system.cpu.setRegisterData(y.value, yData)
@@ -261,8 +261,8 @@ class OpCodeTests {
 
         val x = Nibble(0)
         val y = Nibble(1)
-        val xData = 51.toByte().toNibbles()
-        val yData = 85.toByte().toNibbles()
+        val xData = 51.toNibbles()
+        val yData = 85.toNibbles()
 
         system.cpu.setRegisterData(x.value, xData)
         system.cpu.setRegisterData(y.value, yData)
@@ -279,8 +279,8 @@ class OpCodeTests {
 
         val x = Nibble(0)
         val y = Nibble(1)
-        val xData = 255.toByte().toNibbles()
-        val yData = 128.toByte().toNibbles()
+        val xData = 255.toNibbles()
+        val yData = 128.toNibbles()
 
         system.cpu.setRegisterData(x.value, xData)
         system.cpu.setRegisterData(y.value, yData)
@@ -297,8 +297,8 @@ class OpCodeTests {
 
         val x = Nibble(0)
         val y = Nibble(1)
-        val xData = 255.toByte().toNibbles()
-        val yData = 128.toByte().toNibbles()
+        val xData = 255.toNibbles()
+        val yData = 128.toNibbles()
 
         system.cpu.setRegisterData(x.value, xData)
         system.cpu.setRegisterData(y.value, yData)
@@ -315,8 +315,8 @@ class OpCodeTests {
 
         val x = Nibble(0)
         val y = Nibble(1)
-        val xData = 255.toByte().toNibbles()
-        val yData = 0.toByte().toNibbles()
+        val xData = 255.toNibbles()
+        val yData = 0.toNibbles()
 
         system.cpu.setRegisterData(x.value, xData)
         system.cpu.setRegisterData(y.value, yData)
@@ -333,8 +333,8 @@ class OpCodeTests {
 
         val x = Nibble(0)
         val y = Nibble(1)
-        val xData = 51.toByte().toNibbles()
-        val yData = 85.toByte().toNibbles()
+        val xData = 51.toNibbles()
+        val yData = 85.toNibbles()
 
         system.cpu.setRegisterData(x.value, xData)
         system.cpu.setRegisterData(y.value, yData)
@@ -351,8 +351,8 @@ class OpCodeTests {
 
         val x = Nibble(0)
         val y = Nibble(1)
-        val xData = 0.toByte().toNibbles()
-        val yData = 1.toByte().toNibbles()
+        val xData = 0.toNibbles()
+        val yData = 1.toNibbles()
 
         system.cpu.setRegisterData(x.value, xData)
         system.cpu.setRegisterData(y.value, yData)
@@ -372,8 +372,8 @@ class OpCodeTests {
 
         val x = Nibble(0)
         val y = Nibble(1)
-        val xData = 128.toByte().toNibbles()
-        val yData = 128.toByte().toNibbles()
+        val xData = 128.toNibbles()
+        val yData = 128.toNibbles()
 
         system.cpu.setRegisterData(x.value, xData)
         system.cpu.setRegisterData(y.value, yData)
@@ -393,8 +393,8 @@ class OpCodeTests {
 
         val x = Nibble(0)
         val y = Nibble(1)
-        val xData = 10.toByte().toNibbles()
-        val yData = 5.toByte().toNibbles()
+        val xData = 10.toNibbles()
+        val yData = 5.toNibbles()
 
         system.cpu.setRegisterData(x.value, xData)
         system.cpu.setRegisterData(y.value, yData)
@@ -414,8 +414,8 @@ class OpCodeTests {
 
         val x = Nibble(0)
         val y = Nibble(1)
-        val xData = 5.toByte().toNibbles()
-        val yData = 10.toByte().toNibbles()
+        val xData = 5.toNibbles()
+        val yData = 10.toNibbles()
 
         system.cpu.setRegisterData(x.value, xData)
         system.cpu.setRegisterData(y.value, yData)
@@ -435,7 +435,7 @@ class OpCodeTests {
 
         val x = Nibble(0)
         val y = Nibble(0)
-        val xData = 7.toByte().toNibbles()
+        val xData = 7.toNibbles()
 
         system.cpu.setRegisterData(x.value, xData)
 
@@ -454,7 +454,7 @@ class OpCodeTests {
 
         val x = Nibble(0)
         val y = Nibble(0)
-        val xData = 10.toByte().toNibbles()
+        val xData = 10.toNibbles()
 
         system.cpu.setRegisterData(x.value, xData)
 
@@ -473,8 +473,8 @@ class OpCodeTests {
 
         val x = Nibble(0)
         val y = Nibble(1)
-        val xData = 5.toByte().toNibbles()
-        val yData = 10.toByte().toNibbles()
+        val xData = 5.toNibbles()
+        val yData = 10.toNibbles()
 
         system.cpu.setRegisterData(x.value, xData)
         system.cpu.setRegisterData(y.value, yData)
@@ -494,8 +494,8 @@ class OpCodeTests {
 
         val x = Nibble(0)
         val y = Nibble(1)
-        val xData = 10.toByte().toNibbles()
-        val yData = 5.toByte().toNibbles()
+        val xData = 10.toNibbles()
+        val yData = 5.toNibbles()
 
         system.cpu.setRegisterData(x.value, xData)
         system.cpu.setRegisterData(y.value, yData)
@@ -514,7 +514,7 @@ class OpCodeTests {
     fun `given 8xy8 when x is 10 then result Vx is 20 and VF is 0`() {
 
         val x = Nibble(0)
-        val xData = 10.toByte().toNibbles()
+        val xData = 10.toNibbles()
 
         system.cpu.setRegisterData(x.value, xData)
 
@@ -532,7 +532,7 @@ class OpCodeTests {
     fun `given 8xy8 when x is 200 then result Vx is 144 and VF is 1`() {
 
         val x = Nibble(0)
-        val xData = 200.toByte().toNibbles()
+        val xData = 200.toNibbles()
 
         system.cpu.setRegisterData(x.value, xData)
 
@@ -550,9 +550,9 @@ class OpCodeTests {
     fun `given 9xy0 when Vx != Vy then increment program counter`() {
 
         val x = Nibble(0)
-        val xData = 200.toByte().toNibbles()
+        val xData = 200.toNibbles()
         val y = Nibble(1)
-        val yData = 201.toByte().toNibbles()
+        val yData = 201.toNibbles()
 
         system.cpu.setRegisterData(x.value, xData)
         system.cpu.setRegisterData(y.value, yData)
@@ -567,9 +567,9 @@ class OpCodeTests {
     fun `given 9xy0 when Vx == Vy then do not increment program counter`() {
 
         val x = Nibble(0)
-        val xData = 200.toByte().toNibbles()
+        val xData = 200.toNibbles()
         val y = Nibble(1)
-        val yData = 200.toByte().toNibbles()
+        val yData = 200.toNibbles()
 
         system.cpu.setRegisterData(x.value, xData)
         system.cpu.setRegisterData(y.value, yData)
@@ -601,7 +601,7 @@ class OpCodeTests {
         val n2 = Nibble(0x0)
         val n3 = Nibble(0x6)
 
-        system.cpu.setRegisterData(0, 5.toByte().toNibbles())
+        system.cpu.setRegisterData(0, 5.toNibbles())
 
         val retOpCode = System.OpCode(Nibble(0xB), n1 ,n2, n3)
         system.cpu.execute(retOpCode)
@@ -651,7 +651,7 @@ class OpCodeTests {
     fun `given Dxyn when Vx == 10 Vy == 5 and n == 5 then 4 pixels should turn on`() {
 
         system.cpu.setIndexRegister(0x300)
-        system.memory[0x300] = combineNibbles(Nibble(0xF), Nibble(0x0)).toByte()
+        system.memory[0x300] = combineNibbles(Nibble(0xF), Nibble(0x0))
 
         val x = 10
         val nibblex = Nibble(x)
@@ -689,7 +689,7 @@ class OpCodeTests {
     fun `given Dxyn when V1 == 10 V2 == 5 and n == 5 then 3 pixels should turn on and collision == 1`() {
 
         system.cpu.setIndexRegister(0x300)
-        system.memory[0x300] = combineNibbles(Nibble(0xF), Nibble(0x0)).toByte()
+        system.memory[0x300] = combineNibbles(Nibble(0xF), Nibble(0x0))
 
         val x = 10
         val nibblex = Nibble(x)
@@ -733,8 +733,8 @@ class OpCodeTests {
 
         system.cpu.setIndexRegister(0x300)
 
-        system.memory[0x300] = 0b11110000.toByte()
-        system.memory[0x301] = 0b00111100.toByte()
+        system.memory[0x300] = 0b11110000
+        system.memory[0x301] = 0b00111100
 
         val x = 10
         val y = 5
@@ -780,38 +780,36 @@ class OpCodeTests {
 
     @Test
     fun `given Dxyn when sprite exceeds screen boundaries then it wraps correctly`() {
-
         // Setup
         system.cpu.setIndexRegister(0x300)
-
-        system.memory[0x300] = 0b11110000.toByte()
-        system.memory[0x301] = 0b00001111.toByte()
+        system.memory[0x300] = 0b11110000
+        system.memory[0x301] = 0b00001111
 
         val displayWidth = system.cpu.systemInterface.getFrameBuffer().width
         val displayHeight = system.cpu.systemInterface.getFrameBuffer().height
 
-        val x = displayWidth - 2
-        val y = displayHeight - 1
-        val nibblex = Nibble(x)
-        val nibbley = Nibble(y)
-        val n = 2
+        val vx = displayWidth - 2
+        val vy = displayHeight - 1
 
-        system.cpu.setRegisterData(0, Pair(Nibble(0), nibblex))   // Vx
-        system.cpu.setRegisterData(0, Pair(Nibble(0), nibbley))   // Vy
+        // Use separate registers for Vx and Vy
+        val vxRegister = 0
+        val vyRegister = 1
+        system.cpu.setRegisterData(vxRegister, Pair(Nibble(0), Nibble(vx)))   // Vx
+        system.cpu.setRegisterData(vyRegister, Pair(Nibble(0), Nibble(vy)))   // Vy
 
-        // Create Dxyn opcode
-        val retOpCode = System.OpCode(Nibble(0xD), nibblex, nibbley, Nibble(n))
+        // Create Dxyn opcode (Dxy2)
+        val retOpCode = System.OpCode(Nibble(0xD), Nibble(vxRegister), Nibble(vyRegister), Nibble(2))
         system.cpu.execute(retOpCode)
 
         val display = system.display.matrix
 
-        // Row 1
+        // Row 1: should wrap horizontally
         assertEquals(true, display[0][0])
         assertEquals(true, display[1][0])
         assertEquals(true, display[2][0])
         assertEquals(true, display[3][0])
 
-        //Row 2
+        // Row 2: should wrap horizontally
         assertEquals(true, display[4][1])
         assertEquals(true, display[5][1])
         assertEquals(true, display[6][1])
@@ -825,7 +823,7 @@ class OpCodeTests {
     fun `given Ex9E when key at Vx is pressed then programCounter should be increased`() {
 
         val pos = Nibble(0)
-        val existingData = 0.toByte().toNibbles()
+        val existingData = 0.toNibbles()
         system.cpu.setRegisterData(0, existingData)
 
         system.keyboard = object : KeyboardInterface {
@@ -848,7 +846,7 @@ class OpCodeTests {
     fun `given Ex9E when key at Vx is not pressed then programCounter should not be increased`() {
 
         val pos = Nibble(0)
-        val existingData = 0.toByte().toNibbles()
+        val existingData = 0.toNibbles()
         system.cpu.setRegisterData(0, existingData)
 
         system.keyboard = object : KeyboardInterface {
@@ -867,7 +865,7 @@ class OpCodeTests {
     fun `given ExA1 when key at Vx is pressed then programCounter should not be increased`() {
 
         val pos = Nibble(0)
-        val existingData = 0.toByte().toNibbles()
+        val existingData = 0.toNibbles()
         system.cpu.setRegisterData(0, existingData)
 
         system.keyboard = object : KeyboardInterface {
@@ -890,7 +888,7 @@ class OpCodeTests {
     fun `given ExA1 when key at Vx is not pressed then programCounter should be increased`() {
 
         val pos = Nibble(0)
-        val existingData = 0.toByte().toNibbles()
+        val existingData = 0.toNibbles()
         system.cpu.setRegisterData(0, existingData)
 
         system.keyboard = object : KeyboardInterface {
@@ -909,7 +907,7 @@ class OpCodeTests {
     @Test
     fun `given Fx15 when Vx == 100 then delay timer should be set to 100`() {
 
-        val existingData = 100.toByte().toNibbles()
+        val existingData = 100.toNibbles()
         val pos = Nibble(0x0)
         system.cpu.setRegisterData(pos.value, existingData)
 
@@ -921,7 +919,7 @@ class OpCodeTests {
     @Test
     fun `given Fx07 when Vx == 100 then sound timer should be set to 100`() {
 
-        val existingData = 100.toByte().toNibbles()
+        val existingData = 100.toNibbles()
         val pos = Nibble(0x0)
         system.cpu.setRegisterData(pos.value, existingData)
 
@@ -933,7 +931,7 @@ class OpCodeTests {
     @Test
     fun `given Fx1E when Vx == 100 then indexRegister should be (indexRegister + Vx)`() {
 
-        val existingData = 100.toByte().toNibbles()
+        val existingData = 100.toNibbles()
         val pos = Nibble(0x0)
         system.cpu.setRegisterData(pos.value, existingData)
 
@@ -947,7 +945,7 @@ class OpCodeTests {
     @Test
     fun `given Fx29 when Vx == 0x7 then indexRegister should be (indexRegister + Vx)`() {
 
-        val existingData = 0x7.toByte().toNibbles()
+        val existingData = 0x7.toNibbles()
         val pos = Nibble(5)
         system.cpu.setRegisterData(pos.value, existingData)
 

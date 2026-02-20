@@ -1,31 +1,29 @@
 package com.twobard.kmpchip8.hardware
 
-import com.twobard.kmpchip8.Utils.Companion.toUnsignedInt
-
 class Memory(val ramSize: Int = DEFAULT_RAM_SIZE) {
 
     companion object {
         val DEFAULT_RAM_SIZE = 4096
     }
 
-    private val ram = ByteArray(ramSize)
+    private val ram = IntArray(ramSize)
 
-    fun fill(newVal: Byte){
+    fun fill(newVal: Int){
         ram.fill(newVal)
     }
 
-    operator fun set(address: Int, value: Byte) {
+    operator fun set(address: Int, value: Int) {
         require(address in 0 until ramSize)
         ram[address] = value
     }
 
-    operator fun get(address: Int): Byte {
+    operator fun get(address: Int): Int {
         require(address in 0 until ramSize)
         return ram[address]
     }
 
     fun getAll() = ram.map {
-        it.toUnsignedInt()
+        it
     }
 
     override fun toString(): String {
@@ -40,7 +38,7 @@ class Memory(val ramSize: Int = DEFAULT_RAM_SIZE) {
     fun addRom(rom: ByteArray) {
         var currentAddress = Config.PROGRAM_COUNTER_INIT
         rom.forEach {
-            set(currentAddress, it)
+            set(currentAddress, it.toInt())
             currentAddress++
         }
     }

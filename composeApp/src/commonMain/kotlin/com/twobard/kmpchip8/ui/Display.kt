@@ -1,44 +1,41 @@
 package com.twobard.kmpchip8.ui
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.twobard.kmpchip8.hardware.Display
-import com.twobard.kmpchip8.hardware.FrameBuffer
 
 @Composable
 @Preview
-fun DisplayUI(frame: Int, display: Display) {
+fun DisplayUI(display: Array<BooleanArray>) {
 
     println("recomposing")
+    val pixelSize = 18f
+    val width = display.size
+    val height = if (width > 0) display[0].size else 0
     Card(
         colors = CardDefaults.cardColors()
             .copy(containerColor = CardDefaults.cardColors().containerColor.copy(alpha = 0.5f))
     ) {
-
-        Row {
-
-            display.matrix.forEachIndexed { xIndex, col ->
-                Column {
-                    col.forEach { value ->
-                        //val on = display.matrix[xIndex][yIndex]
-
-                        Box(modifier = Modifier.size(5.dp)
-                            .background(if(value)Color.Blue else Color.Green)) {
-                        }
-                    }
+        Canvas(modifier = Modifier.size((width * pixelSize).dp, (height * pixelSize).dp)) {
+            for (x in 0 until width) {
+                for (y in 0 until height) {
+                    val on = display[x][y]
+                    drawRect(
+                        color = if (on) Color.Blue else Color.Green,
+                        topLeft = Offset(x * pixelSize, y * pixelSize),
+                        size = androidx.compose.ui.geometry.Size(pixelSize, pixelSize),
+                        style = Fill
+                    )
                 }
             }
         }
-
     }
 }

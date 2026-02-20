@@ -56,8 +56,7 @@ class OpCodeTests {
             system.cpu.jump(addressPt1, addressPt2, addressPt3)
         }
 
-        //0xA + 0x3 + 0x7 == 20
-        assertEquals(20, system.cpu.getProgramCounter())
+        assertEquals(0xA37, system.cpu.getProgramCounter())
     }
 
     @Test
@@ -84,7 +83,7 @@ class OpCodeTests {
         system.cpu.execute(retOpCode)
 
         //Check programCounter
-        assertEquals(addressPt1.value + addressPt2.value + addressPt3.value, system.cpu.getProgramCounter())
+        assertEquals(combineNibbles(addressPt1, addressPt2, addressPt3), system.cpu.getProgramCounter())
 
         //Check stackPointer
         assertEquals(1, system.cpu.getStackPointer())
@@ -592,7 +591,7 @@ class OpCodeTests {
         val retOpCode = System.OpCode(Nibble(0xA), n1 ,n2, n3)
         system.cpu.execute(retOpCode)
 
-        assertEquals(6, system.cpu.getIndexRegister())
+        assertEquals(0x123, system.cpu.getIndexRegister())
     }
 
     @Test

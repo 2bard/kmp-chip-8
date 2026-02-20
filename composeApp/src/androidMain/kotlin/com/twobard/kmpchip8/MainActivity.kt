@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -14,6 +15,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.sp
 import com.twobard.kmpchip8.hardware.System
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -23,20 +25,22 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
-        val system = System()
+        //val system = System()
         setContent {
             val coroutineScope = rememberCoroutineScope()
             var frame by remember { mutableIntStateOf(0) }
-
+            var system by remember { mutableStateOf(System())}
             LaunchedEffect(true) {
                 coroutineScope.launch {
                     system.startGame(title = "octojam1title.ch8")
                 }
             }
 
-            val display = system.displayData.collectAsState()
+            val display by system.displayData.collectAsState()
 
-            App(frame, display.value)
+
+            //Text("display:" + display.value., fontSize = 32.sp)
+            App(frame, display ?: arrayOf(booleanArrayOf()))
         }
     }
 }

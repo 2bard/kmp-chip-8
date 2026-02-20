@@ -81,8 +81,8 @@ class System(val memory: Memory = Memory(),
         }
     }
 
-    val _displayData = MutableStateFlow<Display>(Display())
-    val displayData: StateFlow<Display> = _displayData
+    val _displayData = MutableStateFlow<Array<BooleanArray>?>(null)
+    val displayData: StateFlow<Array<BooleanArray>?> = _displayData
 
     suspend fun startCpu(cyclesPerSecond: Int = 500) {
         timer.startRunning()
@@ -94,10 +94,9 @@ class System(val memory: Memory = Memory(),
             cpu.execute(opcode)
             delay(cycleDelay)
 
-           // if(cycleDelay % 1000L == 0L){
-                println("recomposing update")
-                _displayData.update { display }
-           // }
+                println("recomposing update. Active pixels: " + display.pixels())
+                _displayData.value = display.copy()
+
         }
     }
 

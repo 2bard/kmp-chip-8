@@ -77,7 +77,7 @@ class Cpu {
                 jump(nibbles[1], nibbles[2], nibbles[3])
             }
             0x2 -> {
-                call(nibbles[1].value + nibbles[2].value + nibbles[3].value)
+                call(combineNibbles(nibbles[1], nibbles[2], nibbles[3]))
             }
             0x3 -> {
                 se(nibbles[1], combineNibbles(nibbles[2], nibbles[3]))
@@ -320,7 +320,7 @@ class Cpu {
     //Set I = nnn. The value of register I is set to nnn.
     fun annn(n1: Nibble, n2: Nibble, n3: Nibble){
         log("Opcode->annn")
-        indexRegister = n1.value + n2.value + n3.value
+        indexRegister = combineNibbles(n1, n2, n3)
     }
 
     //Skip next instruction if Vx != Vy. The values of Vx and Vy are compared, and if they are not equal, the
@@ -332,32 +332,32 @@ class Cpu {
         }
     }
 
-    //Set Vx = Vx SHL 1. If the most-significant bit of Vx is 1, then VF is set to 1, otherwise to 0. Then Vx is
-    //multiplied by 2.
-    fun shlVxVy(x: Nibble, y: Nibble){
-        log("Opcode->shlVxVy")
-        val vx = registers[x.value]
-        registers[0xF] = (vx shr 7) and 0x1
-        registers[x.value] = (vx shl 1) and 0xFF
+    //Set Vx = Vy SHR 1. If the least-significant bit of Vy is 1, then VF is set to 1, otherwise 0. Then Vy is
+    //divided by 2 and stored in Vx.
+    fun shrVxVy(x: Nibble, y: Nibble){
+        log("Opcode->shrVxVy (8xy6) x=${x.value} y=${y.value}")
+        val vy = registers[y.value]
+        registers[0xF] = vy and 1
+        registers[x.value] = vy shr 1
     }
 
-    //Set Vx = Vy - Vx, set VF = NOT borrow. If Vy ¿ Vx, then VF is set to 1, otherwise 0. Then Vx is
+    //Set Vx = Vy SHL 1. If the most-significant bit of Vy is 1, then VF is set to 1, otherwise 0. Then Vy is
+    //multiplied by 2 and stored in Vx.
+    fun shlVxVy(x: Nibble, y: Nibble){
+        log("Opcode->shlVxVy (8xyE) x=${x.value} y=${y.value}")
+        val vy = registers[y.value]
+        registers[0xF] = (vy shr 7) and 0x1
+        registers[x.value] = (vy shl 1) and 0xFF
+    }
+
+    //Set Vx = Vy - Vx, set VF = NOT borrow. If Vy >= Vx, then VF is set to 1, otherwise 0. Then Vx is
     //subtracted from Vy, and the results stored in Vx.
     fun subnVxVy(x: Nibble, y: Nibble){
-        log("Opcode->subnVxVy")
+        log("Opcode->subnVxVy x=${x.value} y=${y.value}")
         val vx = registers[x.value]
         val vy = registers[y.value]
         registers[0xF] = if (vy >= vx) 1 else 0
         registers[x.value] = (vy - vx) and 0xFF
-    }
-
-    //Set Vx = Vx SHR 1. If the least-significant bit of Vx is 1, then VF is set to 1, otherwise 0. Then Vx is
-    //divided by 2.
-    fun shrVxVy(x: Nibble, y: Nibble){
-        log("Opcode->shrVxVy")
-        val vx = registers[x.value]
-        registers[0xF] = vx and 1
-        registers[x.value] = vx shr 1
     }
 
     //Set Vx = Vx - Vy, set VF = NOT borrow. If Vx ¿ Vy, then VF is set to 1, otherwise 0. Then Vy is
@@ -368,10 +368,7 @@ class Cpu {
         val vx = registers[x.value]
         val vy = registers[y.value]
 
-        //Set VF = 1 if Vx >= Vy (no borrow), else 0
         registers[0xF] = if (vx >= vy) 1 else 0
-
-        //use mod to ensure value is always positive
         registers[x.value] = (vx - vy + 256) % 256
     }
 
@@ -424,7 +421,7 @@ class Cpu {
     //Jump to location nnn. The interpreter sets the program counter to nnn.
     fun jump(address1: Nibble, address2: Nibble, address3: Nibble){
         log("Opcode->jump address1=${address1.value} address2=${address2.value} address3=${address3.value}")
-        val address = address1.value + address2.value + address3.value
+        val address = combineNibbles(address1, address2, address3)
         programCounter = address
     }
 

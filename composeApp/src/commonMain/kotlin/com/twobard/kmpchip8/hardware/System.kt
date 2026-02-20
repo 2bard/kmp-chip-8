@@ -5,7 +5,10 @@ import com.twobard.kmpchip8.Utils.Companion.toNibbles
 import com.twobard.kmpchip8.Utils.Companion.toUnsignedInt
 import com.twobard.kmpchip8.hardware.Config.Companion.`60HZ_TIMER`
 import com.twobard.kmpchip8.hardware.Keyboard
+import kmpchip8.composeapp.generated.resources.Res
+import kmpchip8.composeapp.generated.resources.compose_multiplatform
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -83,6 +86,13 @@ class System(val memory: Memory = Memory(),
         display.clear()
     }
 
+    suspend fun getRom(title: String) : ByteArray {
+        return Res.readBytes("files/$title")
+    }
+
+    fun loadRom(rom: ByteArray) {
+        memory.addRom(rom)
+    }
 
     data class OpCode(val high: Byte, val low: Byte) {
 

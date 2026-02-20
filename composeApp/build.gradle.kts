@@ -63,6 +63,10 @@ kotlin {
             implementation(libs.kotlin.test)
         }
 
+        val commonTest by getting {
+            resources.srcDir("src/commonMain/composeResources")
+        }
+
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)

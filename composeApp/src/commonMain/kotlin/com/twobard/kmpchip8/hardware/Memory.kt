@@ -37,4 +37,12 @@ class Memory(val ramSize: Int = DEFAULT_RAM_SIZE) {
         return sb.toString()
     }
 
+    fun addRom(rom: ByteArray) {
+        var currentAddress = Config.PROGRAM_COUNTER_INIT
+        rom.forEach {
+            set(currentAddress, it)
+            currentAddress++
+        }
+    }
+
 }

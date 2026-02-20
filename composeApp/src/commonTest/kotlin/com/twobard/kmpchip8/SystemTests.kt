@@ -11,6 +11,7 @@ import kotlinx.coroutines.test.runTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class SystemTests {
 
@@ -20,6 +21,21 @@ class SystemTests {
     @BeforeTest
     fun before(){
         system = System()
+    }
+
+    @Test
+    fun `given a rom when loaded then return bytearray`() = runTest {
+        val rom = system.getRom("octojam1title.ch8")
+        assertTrue (rom.isNotEmpty())
+    }
+
+    @Test
+    fun `load rom into system`() = runTest {
+        val rom = system.getRom("octojam1title.ch8")
+        system.loadRom(rom)
+        rom.forEachIndexed { index, byte ->
+            assertEquals(byte, system.memory[Config.PROGRAM_COUNTER_INIT + index])
+        }
     }
 
     @Test

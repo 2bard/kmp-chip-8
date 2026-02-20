@@ -170,6 +170,7 @@ class Cpu {
                 }
             }
         }
+
     }
 
     //Fills V0 to VX with values from memory starting at address I. I is then set to I + x + 1.

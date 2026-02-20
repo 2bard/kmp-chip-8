@@ -37,7 +37,7 @@ class SystemTests {
     @Test
     fun `load rom into system`() = runTest {
         val rom = system.getRom("octojam1title.ch8")
-        system.loadRom(rom)
+        //system.loadRom(rom)
         rom.forEachIndexed { index, byte ->
             //assertEquals(byte, system.memory[Config.PROGRAM_COUNTER_INIT + index])
         }

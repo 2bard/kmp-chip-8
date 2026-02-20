@@ -37,7 +37,7 @@ class Cpu {
     private var indexRegister = 0
 
     fun setRegisterValue(index: Int, value: Int){
-        require(value < 255)
+        require(value in 0..255)
         this.registers[index] = value
     }
 
@@ -266,13 +266,13 @@ class Cpu {
     //VF is set to 1, otherwise it is set to 0. If the sprite is positioned so part of it is outside the coordinates of
     //the display, it wraps around to the opposite side of the screen.
     fun dxyn(n1: Nibble, n2: Nibble, n3: Nibble){
-        log("Opcode->dxyn")
         val displayWidth = systemInterface.getFrameBuffer().width
         val displayHeight = systemInterface.getFrameBuffer().height
         val xStart = registers[n1.value] % displayWidth
         val yStart = registers[n2.value] % displayHeight
+
         val height = n3.value
-        registers[15] = 0  // Reset collision flag
+        registers[0xF] = 0  // Reset collision flag
 
         fun getSpriteAt(x: Int, y: Int) : Boolean {
             val wrappedX = ((x % displayWidth) + displayWidth) % displayWidth
@@ -283,8 +283,7 @@ class Cpu {
         fun setSpriteAt(item: Boolean, x: Int, y: Int) {
             val wrappedX = ((x % displayWidth) + displayWidth) % displayWidth
             val wrappedY = ((y % displayHeight) + displayHeight) % displayHeight
-            println("Setting sprite at [${wrappedX}][${wrappedY}] to $item")
-            systemInterface.getFrameBuffer().setSpriteAt(wrappedX,wrappedY, item)
+            systemInterface.getFrameBuffer().setSpriteAt(wrappedX, wrappedY, item)
         }
 
         for (row in 0 until height) {
@@ -294,9 +293,6 @@ class Cpu {
                 val spritePixel = (spriteByte shr (7 - bit)) and 1
                 if (spritePixel == 0) continue
 
-                // Calculate x and y without wrapping here effectively, because getSpriteAt/setSpriteAt handle wrapping.
-                // However, the standard Chip-8 behavior for wrapping is that it wraps at the edge of the screen.
-                // The loop should iterate over the sprite bits and calculate position based on start position.
                 val x = xStart + bit
                 val y = yStart + row
 
@@ -304,7 +300,7 @@ class Cpu {
                 val newPixel = oldPixel xor true
 
                 if (oldPixel && !newPixel) {
-                    registers[15] = 1
+                    registers[0xF] = 1
                 }
 
                 setSpriteAt(newPixel, x, y)
@@ -318,7 +314,9 @@ class Cpu {
     //ANDed with the value kk. The results are stored in Vx. See instruction 8xy2 for more information on AND.
     fun cxkk(n1: Nibble, n2: Nibble, n3: Nibble){
         log("Opcode->cxkk")
-        registers[n1.value] = randomNumberGenerator.getRandom() and combineNibbles(n2, n3)
+        // Chip-8 requires an 8-bit random value.
+        val rnd = randomNumberGenerator.getRandom() and 0xFF
+        registers[n1.value] = rnd and combineNibbles(n2, n3)
     }
 
     //Jump to location nnn + V0. The program counter is set to nnn plus the value of V0.
@@ -329,14 +327,14 @@ class Cpu {
 
     //Set I = nnn. The value of register I is set to nnn.
     fun annn(n1: Nibble, n2: Nibble, n3: Nibble){
-        log("Opcode->annn")
+        log("Opcode->annn n1=${n1.value} n2=${n2.value} n3=${n3.value} ")
         indexRegister = combineNibbles(n1, n2, n3)
     }
 
     //Skip next instruction if Vx != Vy. The values of Vx and Vy are compared, and if they are not equal, the
     //program counter is increased by 2.
     fun sneVxVy(x: Nibble, y: Nibble){
-        log("Opcode->sneVxVy")
+        log("Opcode->sneVxVy ")
         if(registers[x.value] != registers[y.value]) {
             incrementProgramCounter()
         }
@@ -425,7 +423,8 @@ class Cpu {
     //Set Vx = Vx + kk. Adds the value kk to the value of register Vx, then stores the result in Vx.
     fun add(x: Nibble, kk: Int) {
         log("Opcode->add x=${x.value} kk=$kk")
-        registers[x.value] = registers[x.value] + kk
+        // 7xkk wraps at 8-bit and does not affect VF.
+        registers[x.value] = (registers[x.value] + kk) and 0xFF
     }
 
     //Jump to location nnn. The interpreter sets the program counter to nnn.

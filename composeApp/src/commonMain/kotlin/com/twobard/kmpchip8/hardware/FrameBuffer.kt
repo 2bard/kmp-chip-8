@@ -1,10 +1,12 @@
 package com.twobard.kmpchip8.hardware
 
 class FrameBuffer(val width: Int = 64, val height: Int = 32) {
-    private var buffer = Array(width) { BooleanArray(height) { false } }
+    var buffer = Array(width) { BooleanArray(height) { false } }
 
 
     fun getFrameBuffer() = buffer
+
+
 
     override fun toString(): String {
         val sb = StringBuilder()

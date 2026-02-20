@@ -782,8 +782,8 @@ class OpCodeTests {
     fun `given Dxyn when sprite exceeds screen boundaries then it wraps correctly`() {
         // Setup
         system.cpu.setIndexRegister(0x300)
-        system.memory[0x300] = 240
-        system.memory[0x301] = 15
+        system.memory[0x300] = 0b11110000
+        system.memory[0x301] = 0b00001111
 
         val displayWidth = system.cpu.systemInterface.getFrameBuffer().width
         val displayHeight = system.cpu.systemInterface.getFrameBuffer().height
@@ -801,20 +801,21 @@ class OpCodeTests {
         val retOpCode = System.OpCode(Nibble(0xD), Nibble(vxRegister), Nibble(vyRegister), Nibble(2))
         system.cpu.execute(retOpCode)
 
-
         val display = system.display.matrix
 
-        // Row 1: 0b11110000, drawn at (62,31), wraps to (0,0), (1,0)
+        // Row 0 (sprite byte 11110000) at y=31:
+        // bits 0..3 are 1 => x = 62,63,0,1
         assertEquals(true, display[62][31])
         assertEquals(true, display[63][31])
-        assertEquals(true, display[0][0])
-        assertEquals(true, display[1][0])
+        assertEquals(true, display[0][31])
+        assertEquals(true, display[1][31])
 
-        // Row 2: 0b00001111, drawn at (62,32) wraps to (2,1), (3,1), (4,1), (5,1)
-        assertEquals(true, display[2][1])
-        assertEquals(true, display[3][1])
-        assertEquals(true, display[4][1])
-        assertEquals(true, display[5][1])
+        // Row 1 (sprite byte 00001111) wraps vertically to y=0:
+        // bits 4..7 are 1 => x = 2,3,4,5
+        assertEquals(true, display[2][0])
+        assertEquals(true, display[3][0])
+        assertEquals(true, display[4][0])
+        assertEquals(true, display[5][0])
 
         // VF should be 0 (no collision)
         assertEquals(0, system.cpu.registers[0xF])

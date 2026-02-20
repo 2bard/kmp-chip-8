@@ -15,7 +15,7 @@ class DisplayTests {
 
         var isOn = false
 
-        frameBuffer.buffer.forEachIndexed{ xIndex, column ->
+        frameBuffer.getFrameBuffer().forEachIndexed{ xIndex, column ->
             column.forEachIndexed { yIndex, value ->
                 buffer[xIndex][yIndex] = isOn
                 isOn = !isOn

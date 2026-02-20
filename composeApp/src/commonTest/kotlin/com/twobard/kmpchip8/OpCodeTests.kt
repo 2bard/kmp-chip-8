@@ -947,5 +947,39 @@ class OpCodeTests {
         assertEquals(indexRegisterValue + 100, system.cpu.getIndexRegister())
     }
 
+    @Test
+    fun `given Fx29 when Vx == 0x7 then indexRegister should be (indexRegister + Vx)`() {
+
+        val existingData = 0x7.toByte().toNibbles()
+        val pos = Nibble(5)
+        system.cpu.setRegisterData(pos.value, existingData)
+
+        val retOpCode = System.OpCode(Nibble(0xF), pos ,Nibble(0x2), Nibble(0x9))
+        system.cpu.execute(retOpCode)
+        assertEquals(35, system.cpu.getIndexRegister())
+    }
+
+    @Test
+    fun `given Fx33 when Vx = 254 then memory stores 2, 5, 4`() {
+
+        // Set index register
+        system.cpu.setIndexRegister(0x300)
+
+        val vxRegister = 5
+        system.cpu.registers[vxRegister] = 254
+        val retOpCode = System.OpCode(Nibble(0xF), Nibble(vxRegister), Nibble(0x3), Nibble(0x3))
+        system.cpu.execute(retOpCode)
+
+        val hundreds = system.memory[0x300].toInt() and 0xFF
+        val tens = system.memory[0x301].toInt() and 0xFF
+        val ones = system.memory[0x302].toInt() and 0xFF
+
+        assertEquals(2, hundreds)  // 254 / 100 = 2
+        assertEquals(5, tens)      // (254 / 10) % 10 = 5
+        assertEquals(4, ones)      // 254 % 10 = 4
+    }
+
+
+
 
 }

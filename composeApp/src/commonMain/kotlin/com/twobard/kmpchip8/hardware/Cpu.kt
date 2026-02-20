@@ -155,10 +155,44 @@ class Cpu {
                             0xE -> addI(nibbles[1])
                         }
                     }
+                    0x2 -> {
+                        ldf(nibbles[1])
+                    }
+                    0x3 -> {
+                        ldb(nibbles[1])
+                    }
+                    0x5 -> {
+                        ldivx(nibbles[1])
+                    }
+                    0x6 -> {
 
+                    }
                 }
             }
         }
+    }
+
+    fun ldivx(x: Nibble){
+
+    }
+
+    //Store BCD representation of Vx in memory locations I, I+1, and I+2. The interpreter takes the decimal
+    //value of Vx, and places the hundreds digit in memory at location in I, the tens digit at location I+1, and
+    //the ones digit at location I+2.
+    fun ldb(x: Nibble){
+        val value = registers[x.value]  // Get Vx value
+
+        systemInterface.getMemory()[indexRegister] = (value / 100).toByte()
+        systemInterface.getMemory()[indexRegister + 1] = ((value / 10) % 10).toByte()
+        systemInterface.getMemory()[indexRegister + 2] = (value % 10).toByte()
+    }
+
+    //Set I = location of sprite for digit Vx. The value of I is set to the location for the hexadecimal sprite
+    //corresponding to the value of Vx. See section 2.4, Display, for more information on the Chip-8 hexadecimal
+    //font. To obtain this value, multiply VX by 5 (all font data stored in first 80 bytes of memory).
+    fun ldf(x: Nibble){
+        val digit = registers[x.value]
+        indexRegister = digit * 5
     }
 
     //Set I = I + Vx. The values of I and Vx are added, and the results are stored in I.

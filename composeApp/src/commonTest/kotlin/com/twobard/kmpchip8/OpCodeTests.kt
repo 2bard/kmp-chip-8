@@ -910,13 +910,13 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given Fx07 when Vx == 100 then delay timer should be set to 100`() {
+    fun `given Fx15 when Vx == 100 then delay timer should be set to 100`() {
 
         val existingData = 100.toByte().toNibbles()
         val pos = Nibble(0x0)
         system.cpu.setRegisterData(pos.value, existingData)
 
-        val retOpCode = System.OpCode(Nibble(0xF), pos ,Nibble(0x0), Nibble(0x7))
+        val retOpCode = System.OpCode(Nibble(0xF), pos ,Nibble(0x1), Nibble(0x5))
         system.cpu.execute(retOpCode)
         assertEquals(100, system.timer.getDelayTimer())
     }
@@ -928,9 +928,23 @@ class OpCodeTests {
         val pos = Nibble(0x0)
         system.cpu.setRegisterData(pos.value, existingData)
 
-        val retOpCode = System.OpCode(Nibble(0xF), pos ,Nibble(0x0), Nibble(0xA))
+        val retOpCode = System.OpCode(Nibble(0xF), pos ,Nibble(0x1), Nibble(0x8))
         system.cpu.execute(retOpCode)
         assertEquals(100, system.timer.getSoundTimer())
+    }
+
+    @Test
+    fun `given Fx1E when Vx == 100 then indexRegister should be (indexRegister + Vx)`() {
+
+        val existingData = 100.toByte().toNibbles()
+        val pos = Nibble(0x0)
+        system.cpu.setRegisterData(pos.value, existingData)
+
+        system.cpu.setIndexRegister(5)
+        val indexRegisterValue = system.cpu.getIndexRegister()
+        val retOpCode = System.OpCode(Nibble(0xF), pos ,Nibble(0x1), Nibble(0xE))
+        system.cpu.execute(retOpCode)
+        assertEquals(indexRegisterValue + 100, system.cpu.getIndexRegister())
     }
 
 

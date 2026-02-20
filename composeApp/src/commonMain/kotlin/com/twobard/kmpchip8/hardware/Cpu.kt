@@ -147,22 +147,31 @@ class Cpu {
                 }
             }
             0xF -> {
-                when (nibbles[3].value) {
-                    0x7 -> {
-                        lddt(nibbles[2])
+                when (nibbles[2].value) {
+                    0x1 -> {
+                        when(nibbles[3].value){
+                            0x5 -> lddt(nibbles[1])
+                            0x8 -> ldst(nibbles[1])
+                            0xE -> addI(nibbles[1])
+                        }
                     }
-                    0xA -> {
-                        ldst(nibbles[2])
-                    }
+
                 }
             }
         }
     }
 
+    //Set I = I + Vx. The values of I and Vx are added, and the results are stored in I.
+    fun addI(x: Nibble){
+        indexRegister += registers[x.value]
+    }
+
+    //Set delay timer = Vx. Delay Timer is set equal to the value of Vx.
     fun lddt(x: Nibble){
         systemInterface.getTimer().setDelayTimer(registers[x.value])
     }
 
+    //Set sound timer = Vx. Sound Timer is set equal to the value of Vx.
     fun ldst(x: Nibble){
         systemInterface.getTimer().setSoundTimer(registers[x.value])
     }

@@ -10,6 +10,10 @@ import kmpchip8.composeapp.generated.resources.compose_multiplatform
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class System(val memory: Memory = Memory(),
@@ -53,8 +57,6 @@ class System(val memory: Memory = Memory(),
         )
     }
 
-
-
     fun loadFont(memory: Memory, font: Config.Chip8Font){
         require(font.sprites.size == 80)
         font.sprites.forEachIndexed{ index, sprite ->
@@ -68,19 +70,36 @@ class System(val memory: Memory = Memory(),
         return OpCode(high, low)
     }
 
+    suspend fun startGame(title: String){
 
+        coroutineScope {
+            launch {
+                val rom = getRom(title)
+                loadRom(rom)
+                startCpu()
+            }
+        }
+    }
 
-//    suspend fun startCpu(cyclesPerSecond: Int = 500) {
-//        startRunning()
-//        val cycleDelay = 1000L / cyclesPerSecond
-//
-//        while (running) {
-//            val opcode = fetchOpcode()
-//            cpu.incrementProgramCounter()
-//            cpu.execute(opcode)
-//            delay(cycleDelay)
-//        }
-//    }
+    val _displayData = MutableStateFlow<Display>(Display())
+    val displayData: StateFlow<Display> = _displayData
+
+    suspend fun startCpu(cyclesPerSecond: Int = 500) {
+        timer.startRunning()
+        val cycleDelay = 1000L / cyclesPerSecond
+
+        while (timer.running) {
+            val opcode = fetchOpcode()
+            cpu.incrementProgramCounter()
+            cpu.execute(opcode)
+            delay(cycleDelay)
+
+           // if(cycleDelay % 1000L == 0L){
+                println("recomposing update")
+                _displayData.update { display }
+           // }
+        }
+    }
 
     fun clearDisplay() {
         display.clear()

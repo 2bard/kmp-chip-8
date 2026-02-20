@@ -13,6 +13,7 @@ interface SystemInterface {
 
 class Cpu {
 
+    val enableLogging = true
     val systemInterface: SystemInterface
     var randomNumberGenerator: Utils.RandomNumberGeneratorInterface
 
@@ -31,7 +32,6 @@ class Cpu {
     private val stack: ArrayDeque<Int>
     private var stackPointer = 0x0
     private var programCounter = Config.PROGRAM_COUNTER_INIT
-
 
     val registers: IntArray
     private var indexRegister = 0
@@ -54,6 +54,11 @@ class Cpu {
     fun getFromStack(pos: Int) = stack[pos]
     fun getIndexRegister() = indexRegister
 
+    fun log(str: String){
+        if(enableLogging){
+            println(str)
+        }
+    }
     //End stack
 
     fun execute(opcode: System.OpCode) {
@@ -175,6 +180,7 @@ class Cpu {
 
     //Fills V0 to VX with values from memory starting at address I. I is then set to I + x + 1.
     fun ldvxi(x: Nibble){
+        log("Opcode->ldxvi")
         for (i in 0..x.value) {
             registers[i] = systemInterface.getMemory()[indexRegister + i].toInt() and 0xFF
         }
@@ -183,6 +189,8 @@ class Cpu {
 
     //Stores V0 to VX in memory starting at address I. I is then set to I + x + 1.
     fun ldivx(x: Nibble){
+        log("Opcode->ldivx")
+
         for (i in 0..x.value) {
             systemInterface.getMemory()[indexRegister + i] = registers[i].toByte()
         }
@@ -193,6 +201,8 @@ class Cpu {
     //value of Vx, and places the hundreds digit in memory at location in I, the tens digit at location I+1, and
     //the ones digit at location I+2.
     fun ldb(x: Nibble){
+        log("Opcode->ldb")
+
         val value = registers[x.value]  // Get Vx value
 
         systemInterface.getMemory()[indexRegister] = (value / 100).toByte()
@@ -204,26 +214,31 @@ class Cpu {
     //corresponding to the value of Vx. See section 2.4, Display, for more information on the Chip-8 hexadecimal
     //font. To obtain this value, multiply VX by 5 (all font data stored in first 80 bytes of memory).
     fun ldf(x: Nibble){
+        log("Opcode->ldf")
         val digit = registers[x.value]
         indexRegister = digit * 5
     }
 
     //Set I = I + Vx. The values of I and Vx are added, and the results are stored in I.
     fun addI(x: Nibble){
+        log("Opcode->addI")
         indexRegister += registers[x.value]
     }
 
     //Set delay timer = Vx. Delay Timer is set equal to the value of Vx.
     fun lddt(x: Nibble){
+        log("Opcode->lddt")
         systemInterface.getTimer().setDelayTimer(registers[x.value])
     }
 
     //Set sound timer = Vx. Sound Timer is set equal to the value of Vx.
     fun ldst(x: Nibble){
+        log("Opcode->ldst")
         systemInterface.getTimer().setSoundTimer(registers[x.value])
     }
 
     fun sknp(n1: Nibble) {
+        log("Opcode->sknp")
         systemInterface.getKeyboard().getKeyAt(n1.value).let {
             if(!it) {
                 incrementProgramCounter()
@@ -232,6 +247,7 @@ class Cpu {
     }
 
     fun skp(n1: Nibble) {
+        log("Opcode->skp")
         systemInterface.getKeyboard().getKeyAt(n1.value).let {
             if(it) {
                 incrementProgramCounter()
@@ -245,6 +261,7 @@ class Cpu {
     //VF is set to 1, otherwise it is set to 0. If the sprite is positioned so part of it is outside the coordinates of
     //the display, it wraps around to the opposite side of the screen.
     fun dxyn(n1: Nibble, n2: Nibble, n3: Nibble){
+        log("Opcode->dxyn")
         val displayWidth = systemInterface.getFrameBuffer().width
         val displayHeight = systemInterface.getFrameBuffer().height
         val xStart = registers[n1.value] % displayWidth
@@ -290,22 +307,26 @@ class Cpu {
     //Set Vx = random byte AND kk. The interpreter generates a random number from 0 to 255, which is then
     //ANDed with the value kk. The results are stored in Vx. See instruction 8xy2 for more information on AND.
     fun cxkk(n1: Nibble, n2: Nibble, n3: Nibble){
+        log("Opcode->cxkk")
         registers[n1.value] = randomNumberGenerator.getRandom() and combineNibbles(n2, n3)
     }
 
     //Jump to location nnn + V0. The program counter is set to nnn plus the value of V0.
     fun bnnn(n1: Nibble, n2: Nibble, n3: Nibble){
+        log("Opcode->bnnn")
         programCounter = (combineNibbles(n1, n2, n3)) + registers[0]
     }
 
     //Set I = nnn. The value of register I is set to nnn.
     fun annn(n1: Nibble, n2: Nibble, n3: Nibble){
+        log("Opcode->annn")
         indexRegister = n1.value + n2.value + n3.value
     }
 
     //Skip next instruction if Vx != Vy. The values of Vx and Vy are compared, and if they are not equal, the
     //program counter is increased by 2.
     fun sneVxVy(x: Nibble, y: Nibble){
+        log("Opcode->sneVxVy")
         if(registers[x.value] != registers[y.value]) {
             incrementProgramCounter()
         }
@@ -314,6 +335,7 @@ class Cpu {
     //Set Vx = Vx SHL 1. If the most-significant bit of Vx is 1, then VF is set to 1, otherwise to 0. Then Vx is
     //multiplied by 2.
     fun shlVxVy(x: Nibble, y: Nibble){
+        log("Opcode->shlVxVy")
         val vx = registers[x.value]
         registers[0xF] = (vx shr 7) and 0x1
         registers[x.value] = (vx shl 1) and 0xFF
@@ -322,6 +344,7 @@ class Cpu {
     //Set Vx = Vy - Vx, set VF = NOT borrow. If Vy ¿ Vx, then VF is set to 1, otherwise 0. Then Vx is
     //subtracted from Vy, and the results stored in Vx.
     fun subnVxVy(x: Nibble, y: Nibble){
+        log("Opcode->subnVxVy")
         val vx = registers[x.value]
         val vy = registers[y.value]
         registers[0xF] = if (vy >= vx) 1 else 0
@@ -331,6 +354,7 @@ class Cpu {
     //Set Vx = Vx SHR 1. If the least-significant bit of Vx is 1, then VF is set to 1, otherwise 0. Then Vx is
     //divided by 2.
     fun shrVxVy(x: Nibble, y: Nibble){
+        log("Opcode->shrVxVy")
         val vx = registers[x.value]
         registers[0xF] = vx and 1
         registers[x.value] = vx shr 1
@@ -339,6 +363,8 @@ class Cpu {
     //Set Vx = Vx - Vy, set VF = NOT borrow. If Vx ¿ Vy, then VF is set to 1, otherwise 0. Then Vy is
     //subtracted from Vx, and the results stored in Vx.
     fun subVxVy(x: Nibble, y: Nibble){
+        log("Opcode->subVxVy")
+
         val vx = registers[x.value]
         val vy = registers[y.value]
 
@@ -353,6 +379,7 @@ class Cpu {
     //than 8 bits (i.e., ¿ 255,) VF is set to 1, otherwise 0. Only the lowest 8 bits of the result are kept, and stored
     //in Vx.
     fun addVxVy(x: Nibble, y: Nibble){
+        log("Opcode->addVxVy x=${x.value} y=${y.value}")
         val newValue = registers[x.value] + registers[y.value]
         registers[x.value] = newValue.toUByte().toInt()
         registers[0xF] = if(newValue > 255) 1 else 0
@@ -362,6 +389,7 @@ class Cpu {
     //in Vx. An exclusive OR compares the corresponding bits from two values, and if the bits are not both the
     //same, then the corresponding bit in the result is set to 1. Otherwise, it is 0.
     fun xorVxVy(x: Nibble, y: Nibble){
+        log("Opcode->xorVxVy x=${x.value} y=${y.value}")
         registers[x.value] = registers[x.value] xor registers[y.value]
     }
 
@@ -369,6 +397,7 @@ class Cpu {
     //A bitwise AND compares the corresponding bits from two values, and if both bits are 1, then the same bit
     //in the result is also 1. Otherwise, it is 0.
     fun andVxVy(x: Nibble, y: Nibble){
+        log("Opcode->andVxVy x=${x.value} y=${y.value}")
         registers[x.value] = registers[x.value] and registers[y.value]
     }
 
@@ -376,42 +405,49 @@ class Cpu {
     //bitwise OR compares the corresponding bits from two values, and if either bit is 1, then the same bit in the
     //result is also 1. Otherwise, it is 0.
     fun orVxVy(x: Nibble, y: Nibble){
+        log("Opcode->orVxVy x=${x.value} y=${y.value}")
         registers[x.value] = registers[x.value] or registers[y.value]
     }
 
     //Set Vx = Vy. Stores the value of register Vy in register Vx.
     fun ldVxVy(x: Nibble, y: Nibble){
+        log("Opcode->ldVxVy x=${x.value} y=${y.value}")
         registers[x.value] = registers[y.value]
     }
 
     //Set Vx = Vx + kk. Adds the value kk to the value of register Vx, then stores the result in Vx.
     fun add(x: Nibble, kk: Int) {
+        log("Opcode->add x=${x.value} kk=$kk")
         registers[x.value] = registers[x.value] + kk
     }
 
     //Jump to location nnn. The interpreter sets the program counter to nnn.
     fun jump(address1: Nibble, address2: Nibble, address3: Nibble){
-        //Jump to location nnn. The interpreter sets the program counter to nnn.
+        log("Opcode->jump address1=${address1.value} address2=${address2.value} address3=${address3.value}")
         val address = address1.value + address2.value + address3.value
         programCounter = address
     }
 
     //Set Vx = kk. The interpreter puts the value kk into register Vx.
     fun load(dest: Nibble, value: Int){
+        log("Opcode->load dest=${dest.value} value=$value")
         registers[dest.value] = value
     }
 
     fun seVxVy(vX: Nibble, vY: Nibble){
-       se(vX, registers[vY.value])
+        log("Opcode->seVxVy vX=${vX.value} vY=${vY.value}")
+        se(vX, registers[vY.value])
     }
 
     fun se(dest: Nibble, value: Int){
+        log("Opcode->se dest=${dest.value} value=$value")
         if(registers[dest.value] == value){
             incrementProgramCounter()
         }
     }
 
     fun sne(dest: Nibble, value: Int){
+        log("Opcode->sne dest=${dest.value} value=$value")
         if(registers[dest.value] != value){
             incrementProgramCounter()
         }

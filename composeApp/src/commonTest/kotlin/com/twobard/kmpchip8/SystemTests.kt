@@ -24,6 +24,11 @@ class SystemTests {
     }
 
     @Test
+    fun `runGame`() = runTest {
+        system.startGame("octojam1title.ch8")
+    }
+
+    @Test
     fun `given a rom when loaded then return bytearray`() = runTest {
         val rom = system.getRom("octojam1title.ch8")
         assertTrue (rom.isNotEmpty())

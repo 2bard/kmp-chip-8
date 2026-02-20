@@ -9,6 +9,7 @@ class Display {
     }
 
     fun display(frameBuffer: FrameBuffer) {
+        println("Display updating.")
         frameBuffer.buffer.forEachIndexed { xIndexed, column ->
             column.forEachIndexed { yIndex, value ->
                 matrix[xIndexed][yIndex] = value

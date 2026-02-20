@@ -25,7 +25,7 @@ class Utils {
     }
 
     class RandomNumberGenerator() : RandomNumberGeneratorInterface {
-        override fun getRandom() = Random.nextInt()
+        override fun getRandom() = Random.nextInt(255)
     }
 }
 

@@ -782,38 +782,39 @@ class OpCodeTests {
     fun `given Dxyn when sprite exceeds screen boundaries then it wraps correctly`() {
         // Setup
         system.cpu.setIndexRegister(0x300)
-        system.memory[0x300] = 0b11110000
-        system.memory[0x301] = 0b00001111
+        system.memory[0x300] = 240
+        system.memory[0x301] = 15
 
         val displayWidth = system.cpu.systemInterface.getFrameBuffer().width
         val displayHeight = system.cpu.systemInterface.getFrameBuffer().height
 
-        val vx = displayWidth - 2
-        val vy = displayHeight - 1
+        val vx = displayWidth - 2 // 62
+        val vy = displayHeight - 1 // 31
 
         // Use separate registers for Vx and Vy
         val vxRegister = 0
         val vyRegister = 1
-        system.cpu.setRegisterData(vxRegister, Pair(Nibble(0), Nibble(vx)))   // Vx
-        system.cpu.setRegisterData(vyRegister, Pair(Nibble(0), Nibble(vy)))   // Vy
+        system.cpu.setRegisterData(vxRegister, vx.toNibbles())   // Vx
+        system.cpu.setRegisterData(vyRegister, vy.toNibbles())   // Vy
 
         // Create Dxyn opcode (Dxy2)
         val retOpCode = System.OpCode(Nibble(0xD), Nibble(vxRegister), Nibble(vyRegister), Nibble(2))
         system.cpu.execute(retOpCode)
 
+
         val display = system.display.matrix
 
-        // Row 1: should wrap horizontally
+        // Row 1: 0b11110000, drawn at (62,31), wraps to (0,0), (1,0)
+        assertEquals(true, display[62][31])
+        assertEquals(true, display[63][31])
         assertEquals(true, display[0][0])
         assertEquals(true, display[1][0])
-        assertEquals(true, display[2][0])
-        assertEquals(true, display[3][0])
 
-        // Row 2: should wrap horizontally
+        // Row 2: 0b00001111, drawn at (62,32) wraps to (2,1), (3,1), (4,1), (5,1)
+        assertEquals(true, display[2][1])
+        assertEquals(true, display[3][1])
         assertEquals(true, display[4][1])
         assertEquals(true, display[5][1])
-        assertEquals(true, display[6][1])
-        assertEquals(true, display[7][1])
 
         // VF should be 0 (no collision)
         assertEquals(0, system.cpu.registers[0xF])

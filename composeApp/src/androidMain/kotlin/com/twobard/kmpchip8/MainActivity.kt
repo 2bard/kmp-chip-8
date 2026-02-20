@@ -33,6 +33,7 @@ class MainActivity : ComponentActivity() {
             LaunchedEffect(true) {
                 coroutineScope.launch {
                     system.startGame(title = "octojam1title.ch8")
+                    //system.startGame(title = "octoachip8story.ch8")
                 }
             }
 

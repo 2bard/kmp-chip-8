@@ -36,6 +36,11 @@ class Cpu {
     val registers: IntArray
     private var indexRegister = 0
 
+    fun setRegisterValue(index: Int, value: Int){
+        require(value < 255)
+        this.registers[index] = value
+    }
+
     //Stack
     fun call(address: Int){
         stack.addFirst(programCounter)
@@ -267,34 +272,39 @@ class Cpu {
         val xStart = registers[n1.value] % displayWidth
         val yStart = registers[n2.value] % displayHeight
         val height = n3.value
-        registers[0xF] = 0  // Reset collision flag
+        registers[15] = 0  // Reset collision flag
 
         fun getSpriteAt(x: Int, y: Int) : Boolean {
-            return systemInterface.getFrameBuffer().buffer[x][y]
+            val wrappedX = ((x % displayWidth) + displayWidth) % displayWidth
+            val wrappedY = ((y % displayHeight) + displayHeight) % displayHeight
+            return systemInterface.getFrameBuffer().getSpriteAt(wrappedX, wrappedY)
         }
 
         fun setSpriteAt(item: Boolean, x: Int, y: Int) {
-            println("Setting sprite at [$x][$y] to $item")
-            systemInterface.getFrameBuffer().buffer[x][y] = item
+            val wrappedX = ((x % displayWidth) + displayWidth) % displayWidth
+            val wrappedY = ((y % displayHeight) + displayHeight) % displayHeight
+            println("Setting sprite at [${wrappedX}][${wrappedY}] to $item")
+            systemInterface.getFrameBuffer().setSpriteAt(wrappedX,wrappedY, item)
         }
 
         for (row in 0 until height) {
-
             val spriteByte = systemInterface.getMemory()[indexRegister + row].toInt() and 0xFF
 
             for (bit in 0 until 8) {
-
                 val spritePixel = (spriteByte shr (7 - bit)) and 1
                 if (spritePixel == 0) continue
 
-                val x = (xStart + bit) % displayWidth
-                val y = (yStart + row) % displayHeight
+                // Calculate x and y without wrapping here effectively, because getSpriteAt/setSpriteAt handle wrapping.
+                // However, the standard Chip-8 behavior for wrapping is that it wraps at the edge of the screen.
+                // The loop should iterate over the sprite bits and calculate position based on start position.
+                val x = xStart + bit
+                val y = yStart + row
 
                 val oldPixel = getSpriteAt(x, y)
                 val newPixel = oldPixel xor true
 
                 if (oldPixel && !newPixel) {
-                    registers[0xF] = 1
+                    registers[15] = 1
                 }
 
                 setSpriteAt(newPixel, x, y)

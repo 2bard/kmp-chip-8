@@ -68,7 +68,8 @@ class System(val memory: Memory = Memory(),
         coroutineScope {
             launch {
                 val rom = getRom(title)
-                loadRom(rom)
+                val intArray = rom.map { it.toInt() and 0xFF }.toIntArray()
+                loadRom(intArray)
                 startCpu()
             }
         }
@@ -101,7 +102,7 @@ class System(val memory: Memory = Memory(),
         return Res.readBytes("files/$title")
     }
 
-    fun loadRom(rom: ByteArray) {
+    fun loadRom(rom: IntArray) {
         memory.addRom(rom)
     }
 
@@ -130,5 +131,7 @@ fun combineNibbles(vararg nibbles: Nibble): Int {
 }
 
 data class Nibble(val value: Int) {
-
+    init {
+        require(value < 16)
+    }
 }

@@ -30,7 +30,7 @@ class Display {
     fun display(frameBuffer: FrameBuffer) {
         //println("Display updating.")
         var i = 0
-        frameBuffer.buffer.forEachIndexed { xIndexed, column ->
+        frameBuffer.getFrameBuffer().forEachIndexed { xIndexed, column ->
             column.forEachIndexed { yIndex, value ->
                 matrix[xIndexed][yIndex] = value
                 if(value == true){

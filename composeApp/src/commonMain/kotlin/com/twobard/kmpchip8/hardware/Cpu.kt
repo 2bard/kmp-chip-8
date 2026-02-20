@@ -165,15 +165,27 @@ class Cpu {
                         ldivx(nibbles[1])
                     }
                     0x6 -> {
-
+                        ldvxi(nibbles[1])
                     }
                 }
             }
         }
     }
 
-    fun ldivx(x: Nibble){
+    //Fills V0 to VX with values from memory starting at address I. I is then set to I + x + 1.
+    fun ldvxi(x: Nibble){
+        for (i in 0..x.value) {
+            registers[i] = systemInterface.getMemory()[indexRegister + i].toInt() and 0xFF
+        }
+        indexRegister += x.value + 1
+    }
 
+    //Stores V0 to VX in memory starting at address I. I is then set to I + x + 1.
+    fun ldivx(x: Nibble){
+        for (i in 0..x.value) {
+            systemInterface.getMemory()[indexRegister + i] = registers[i].toByte()
+        }
+        indexRegister += x.value + 1
     }
 
     //Store BCD representation of Vx in memory locations I, I+1, and I+2. The interpreter takes the decimal

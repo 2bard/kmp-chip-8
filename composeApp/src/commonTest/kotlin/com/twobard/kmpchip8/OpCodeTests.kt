@@ -1,7 +1,6 @@
 package com.twobard.kmpchip8
 
 import com.twobard.kmpchip8.Utils.Companion.toNibbles
-import com.twobard.kmpchip8.Utils.Companion.toUnsignedInt
 import com.twobard.kmpchip8.hardware.Config
 import com.twobard.kmpchip8.hardware.KeyboardInterface
 import com.twobard.kmpchip8.hardware.Nibble
@@ -9,7 +8,6 @@ import com.twobard.kmpchip8.hardware.System
 import com.twobard.kmpchip8.hardware.combineNibbles
 import dev.mokkery.verify
 import dev.mokkery.verify.VerifyMode.Companion.atMost
-import kotlin.collections.forEach
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -978,6 +976,85 @@ class OpCodeTests {
         assertEquals(5, tens)      // (254 / 10) % 10 = 5
         assertEquals(4, ones)      // 254 % 10 = 4
     }
+
+    @Test
+    fun `given Fx55 when V0 to V3 are set then memory stores values and I increments`() {
+
+        system.cpu.setIndexRegister(0x300)
+
+        system.cpu.registers[0] = 5
+        system.cpu.registers[1] = 10
+        system.cpu.registers[2] = 15
+        system.cpu.registers[3] = 20
+
+        val xRegister = 3
+        val retOpCode = System.OpCode(Nibble(0xF), Nibble(xRegister), Nibble(0x5), Nibble(0x5))
+        system.cpu.execute(retOpCode)
+
+        val mem0 = system.memory[0x300].toInt() and 0xFF
+        val mem1 = system.memory[0x301].toInt() and 0xFF
+        val mem2 = system.memory[0x302].toInt() and 0xFF
+        val mem3 = system.memory[0x303].toInt() and 0xFF
+
+        assertEquals(5, mem0)
+        assertEquals(10, mem1)
+        assertEquals(15, mem2)
+        assertEquals(20, mem3)
+
+        assertEquals(0x304, system.cpu.getIndexRegister())
+    }
+
+    @Test
+    fun `given Fx55 when V0 to V3 are set and I starts at 0 then memory stores values and I increments`() {
+
+        system.cpu.setIndexRegister(0x0)
+
+        system.cpu.registers[0] = 3
+        system.cpu.registers[1] = 6
+        system.cpu.registers[2] = 9
+        system.cpu.registers[3] = 12
+
+        val xRegister = 3
+        val retOpCode = System.OpCode(Nibble(0xF), Nibble(xRegister), Nibble(0x5), Nibble(0x5))
+        system.cpu.execute(retOpCode)
+
+        val mem0 = system.memory[0x0].toInt() and 0xFF
+        val mem1 = system.memory[0x1].toInt() and 0xFF
+        val mem2 = system.memory[0x2].toInt() and 0xFF
+        val mem3 = system.memory[0x3].toInt() and 0xFF
+
+        assertEquals(3, mem0)
+        assertEquals(6, mem1)
+        assertEquals(9, mem2)
+        assertEquals(12, mem3)
+
+        assertEquals(4, system.cpu.getIndexRegister())
+    }
+
+    @Test
+    fun `given Fx65 when memory has values then V0 to V3 are loaded and I increments`() {
+
+        system.cpu.setIndexRegister(0)
+
+        system.memory[0x0] = 5
+        system.memory[0x1] = 10
+        system.memory[0x2] = 15
+        system.memory[0x3] = 20
+
+        val xRegister = 3
+        val retOpCode = System.OpCode(Nibble(0xF), Nibble(xRegister), Nibble(0x6), Nibble(0x5))
+        system.cpu.execute(retOpCode)
+
+        assertEquals(5, system.cpu.registers[0])
+        assertEquals(10, system.cpu.registers[1])
+        assertEquals(15, system.cpu.registers[2])
+        assertEquals(20, system.cpu.registers[3])
+
+        assertEquals(4, system.cpu.getIndexRegister())
+    }
+
+
+
 
 
 

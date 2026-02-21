@@ -30,7 +30,7 @@ class OpCodeTests {
         val loadOpCode = System.OpCode(Nibble(0x6), Nibble(destination), value.first, value.second)
         system.cpu.execute(loadOpCode)
 
-        assertEquals(0x05, system.cpu.registers[destination])
+        assertEquals(0x05, system.cpu.getRegisterValue(destination))
 
     }
 
@@ -46,9 +46,10 @@ class OpCodeTests {
 
     @Test
     fun `given a JMP opcode when executed then register should have new value at correct destination`() {
+        // Jump (1nnn) sets PC = nnn. PC must remain even (2-byte opcodes).
         val addressPt1 = Nibble(0xA)
         val addressPt2 = Nibble(0x3)
-        val addressPt3 =  Nibble(0x7)
+        val addressPt3 =  Nibble(0x6) // 0xA36 (even)
         val loadOpCode = System.OpCode(Nibble(0x1), addressPt1 ,addressPt2, addressPt3)
         system.cpu.execute(loadOpCode)
 
@@ -56,39 +57,58 @@ class OpCodeTests {
             system.cpu.jump(addressPt1, addressPt2, addressPt3)
         }
 
-        assertEquals(0xA37, system.cpu.getProgramCounter())
+        assertEquals(0xA36, system.cpu.getProgramCounter())
     }
 
     @Test
-    fun `given a RET opcode when executed then register should have new value at correct destination`() {
+    fun `given a RET opcode when executed then programCounter and stackPointer are restored`() {
 
-        system.cpu.call(1)
-        system.cpu.call(2)
+        val initialPc = system.cpu.getProgramCounter()
+
+        system.cpu.call(0x300)
+        val pcAfterFirstCall = system.cpu.getProgramCounter()
+
+        system.cpu.call(0x400)
+
+        // Sanity: we should now be at the last called address with 2 items on the stack.
+        assertEquals(0x400, system.cpu.getProgramCounter())
+        assertEquals(2, system.cpu.getStackPointer())
+
+        // Act: execute RET (00EE)
         val retOpCode = System.OpCode(Nibble(0x0), Nibble(0x0) ,Nibble(0xE), Nibble(0xE))
         system.cpu.execute(retOpCode)
 
-        verify(atMost(1)) {
-            system.cpu.ret()
-        }
+        // Assert: returned to the previous call site and stackPointer decremented.
+        // Since call() pushes the current PC then sets PC=address, the return address after the second call is
+        // the PC value at the time of the second call: pcAfterFirstCall.
+        assertEquals(pcAfterFirstCall, system.cpu.getProgramCounter())
+        assertEquals(1, system.cpu.getStackPointer())
+
+        // Act again: RET should bring us back to where we started.
+        system.cpu.execute(retOpCode)
+        assertEquals(initialPc, system.cpu.getProgramCounter())
+        assertEquals(0, system.cpu.getStackPointer())
     }
 
     @Test
     fun `given a CALL opcode when executed then programCounter and Stack should be in correct state`() {
 
-        val addressPt1 = Nibble(0xA)
+        // call nnn (2nnn) pushes the current PC (call site) on the stack and sets PC to nnn.
+        // PC must remain even (2-byte opcodes), so use an even nnn.
+        val addressPt1 = Nibble(0x2)
         val addressPt2 = Nibble(0x3)
-        val addressPt3 =  Nibble(0x7)
+        val addressPt3 =  Nibble(0x6) // 0x236
 
-        val retOpCode = System.OpCode(Nibble(0x2), addressPt1 ,addressPt2, addressPt3)
-        system.cpu.execute(retOpCode)
+        val callOpCode = System.OpCode(Nibble(0x2), addressPt1 ,addressPt2, addressPt3)
+        system.cpu.execute(callOpCode)
 
         //Check programCounter
         assertEquals(combineNibbles(addressPt1, addressPt2, addressPt3), system.cpu.getProgramCounter())
 
-        //Check stackPointer
+        //Check stackPointer (treated as depth)
         assertEquals(1, system.cpu.getStackPointer())
 
-        //Check stack state
+        //Check stack top: call() uses addFirst(), so element 0 is the most recent return address
         assertEquals(Config.PROGRAM_COUNTER_INIT, system.cpu.getFromStack(0))
     }
 
@@ -185,7 +205,7 @@ class OpCodeTests {
         val retOpCode = System.OpCode(Nibble(0x7), pos ,data.first, data.second)
         system.cpu.execute(retOpCode)
 
-        assertEquals(30, system.cpu.registers[pos.value])
+        assertEquals(30, system.cpu.getRegisterValue(pos.value))
     }
 
     @Test
@@ -201,7 +221,7 @@ class OpCodeTests {
         val retOpCode = System.OpCode(Nibble(0x8), x ,y, Nibble(0x0))
         system.cpu.execute(retOpCode)
 
-        assertEquals(20, system.cpu.registers[x.value])
+        assertEquals(20, system.cpu.getRegisterValue(x.value))
     }
 
     @Test
@@ -219,7 +239,7 @@ class OpCodeTests {
         val retOpCode = System.OpCode(Nibble(0x8), x ,y, Nibble(0x1))
         system.cpu.execute(retOpCode)
 
-        assertEquals(255, system.cpu.registers[x.value])
+        assertEquals(255, system.cpu.getRegisterValue(x.value))
     }
 
     @Test
@@ -236,7 +256,7 @@ class OpCodeTests {
         val retOpCode = System.OpCode(Nibble(0x8), x ,y, Nibble(0x1))
         system.cpu.execute(retOpCode)
 
-        assertEquals(255, system.cpu.registers[x.value])
+        assertEquals(255, system.cpu.getRegisterValue(x.value))
     }
 
     @Test
@@ -253,7 +273,7 @@ class OpCodeTests {
         val retOpCode = System.OpCode(Nibble(0x8), x ,y, Nibble(0x1))
         system.cpu.execute(retOpCode)
 
-        assertEquals(0, system.cpu.registers[x.value])
+        assertEquals(0, system.cpu.getRegisterValue(x.value))
     }
 
     @Test
@@ -271,7 +291,7 @@ class OpCodeTests {
         system.cpu.execute(retOpCode)
 
         //51 AND 85 = 17
-        assertEquals(17, system.cpu.registers[x.value])
+        assertEquals(17, system.cpu.getRegisterValue(x.value))
     }
 
     @Test
@@ -289,7 +309,7 @@ class OpCodeTests {
         system.cpu.execute(retOpCode)
 
         //288 AND 128 = 128
-        assertEquals(128, system.cpu.registers[x.value])
+        assertEquals(128, system.cpu.getRegisterValue(x.value))
     }
 
     @Test
@@ -307,7 +327,7 @@ class OpCodeTests {
         system.cpu.execute(retOpCode)
 
         //51 AND 85 = 17
-        assertEquals(127, system.cpu.registers[x.value])
+        assertEquals(127, system.cpu.getRegisterValue(x.value))
     }
 
     @Test
@@ -325,7 +345,7 @@ class OpCodeTests {
         system.cpu.execute(retOpCode)
 
         //255 AND 0 = 255
-        assertEquals(255, system.cpu.registers[x.value])
+        assertEquals(255, system.cpu.getRegisterValue(x.value))
     }
 
     @Test
@@ -343,7 +363,7 @@ class OpCodeTests {
         system.cpu.execute(retOpCode)
 
         //51 AND 85 = 102
-        assertEquals(102, system.cpu.registers[x.value])
+        assertEquals(102, system.cpu.getRegisterValue(x.value))
     }
 
     @Test
@@ -361,10 +381,10 @@ class OpCodeTests {
         system.cpu.execute(retOpCode)
 
         //0 ADD 1 = 1
-        assertEquals(1, system.cpu.registers[x.value])
+        assertEquals(1, system.cpu.getRegisterValue(x.value))
 
         //Carry is 0
-        assertEquals(0, system.cpu.registers[0xf])
+        assertEquals(0, system.cpu.getRegisterValue(0xf))
     }
 
     @Test
@@ -381,11 +401,11 @@ class OpCodeTests {
         val retOpCode = System.OpCode(Nibble(0x8), x ,y, Nibble(0x4))
         system.cpu.execute(retOpCode)
 
-        //128 ADD 128 = 0 (carry 1)
-        assertEquals(0, system.cpu.registers[x.value])
+        //128 + 128 = 256 -> Vx = 0 (low 8 bits)
+        assertEquals(0, system.cpu.getRegisterValue(x.value))
 
-        //Carry is 1
-        assertEquals(1, system.cpu.registers[0xf])
+        //Carry is 1 because sum > 255
+        assertEquals(1, system.cpu.getRegisterValue(0xf))
     }
 
     @Test
@@ -403,10 +423,10 @@ class OpCodeTests {
         system.cpu.execute(retOpCode)
 
         //10 SUB 5 = 5 (no borrow)
-        assertEquals(5, system.cpu.registers[x.value])
+        assertEquals(5, system.cpu.getRegisterValue(x.value))
 
         //no borrow
-        assertEquals(1, system.cpu.registers[0xf])
+        assertEquals(1, system.cpu.getRegisterValue(0xf))
     }
 
     @Test
@@ -424,10 +444,10 @@ class OpCodeTests {
         system.cpu.execute(retOpCode)
 
         //5 SUB 10 = 251 (borrow)
-        assertEquals(251, system.cpu.registers[x.value])
+        assertEquals(251, system.cpu.getRegisterValue(x.value))
 
         //borrow
-        assertEquals(0, system.cpu.registers[0xf])
+        assertEquals(0, system.cpu.getRegisterValue(0xf))
     }
 
     @Test
@@ -443,10 +463,10 @@ class OpCodeTests {
         system.cpu.execute(retOpCode)
 
         //7 shr 2 = 3 (divided by two)
-        assertEquals(3, system.cpu.registers[x.value])
+        assertEquals(3, system.cpu.getRegisterValue(x.value))
 
         // VF = LSB of Vx
-        assertEquals(1, system.cpu.registers[0xf])
+        assertEquals(1, system.cpu.getRegisterValue(0xf))
     }
 
     @Test
@@ -462,10 +482,10 @@ class OpCodeTests {
         system.cpu.execute(retOpCode)
 
         //10 shr 2 = 5 (divided by two)
-        assertEquals(5, system.cpu.registers[x.value])
+        assertEquals(5, system.cpu.getRegisterValue(x.value))
 
         // VF = LSB of Vx
-        assertEquals(0, system.cpu.registers[0xf])
+        assertEquals(0, system.cpu.getRegisterValue(0xf))
     }
 
     @Test
@@ -483,10 +503,10 @@ class OpCodeTests {
         system.cpu.execute(retOpCode)
 
         //10 - 5 = 5
-        assertEquals(5, system.cpu.registers[x.value])
+        assertEquals(5, system.cpu.getRegisterValue(x.value))
 
         // VF = 1 if Vy >= Vx (no borrow), else 0
-        assertEquals(1, system.cpu.registers[0xf])
+        assertEquals(1, system.cpu.getRegisterValue(0xf))
     }
 
     @Test
@@ -504,10 +524,10 @@ class OpCodeTests {
         system.cpu.execute(retOpCode)
 
         //5 - 10 = 251 (with wraparound)
-        assertEquals(251, system.cpu.registers[x.value])
+        assertEquals(251, system.cpu.getRegisterValue(x.value))
 
         // VF = 0 becayse Vy < Vx
-        assertEquals(0, system.cpu.registers[0xf])
+        assertEquals(0, system.cpu.getRegisterValue(0xf))
     }
 
     @Test
@@ -522,10 +542,10 @@ class OpCodeTests {
         system.cpu.execute(retOpCode)
 
         //10 x 2 = 20
-        assertEquals(20, system.cpu.registers[x.value])
+        assertEquals(20, system.cpu.getRegisterValue(x.value))
 
         // VF = 0 (no overflow)
-        assertEquals(0, system.cpu.registers[0xf])
+        assertEquals(0, system.cpu.getRegisterValue(0xf))
     }
 
     @Test
@@ -540,10 +560,10 @@ class OpCodeTests {
         system.cpu.execute(retOpCode)
 
         //200 x 2 = 400. 400 % 256 = 144
-        assertEquals(144, system.cpu.registers[x.value])
+        assertEquals(144, system.cpu.getRegisterValue(x.value))
 
         // VF = 1 (overflows)
-        assertEquals(1, system.cpu.registers[0xf])
+        assertEquals(1, system.cpu.getRegisterValue(0xf))
     }
 
     @Test
@@ -595,18 +615,19 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given Bnnn when nnn == 6 and V0 == 5 then programCounter == 11`() {
+    fun `given Bnnn when nnn == 0x206 and V0 == 6 then programCounter == 0x20C`() {
 
-        val n1 = Nibble(0x0)
+        // Bnnn jumps to nnn + V0. PC must remain even (2-byte opcodes) and in 0x200..0xFFE.
+        val n1 = Nibble(0x2)
         val n2 = Nibble(0x0)
         val n3 = Nibble(0x6)
 
-        system.cpu.setRegisterData(0, 5.toNibbles())
+        system.cpu.setRegisterData(0, 6.toNibbles())
 
-        val retOpCode = System.OpCode(Nibble(0xB), n1 ,n2, n3)
-        system.cpu.execute(retOpCode)
+        val opcode = System.OpCode(Nibble(0xB), n1, n2, n3)
+        system.cpu.execute(opcode)
 
-        assertEquals(11, system.cpu.getProgramCounter())
+        assertEquals(0x20C, system.cpu.getProgramCounter())
     }
 
     @Test
@@ -625,7 +646,7 @@ class OpCodeTests {
         val retOpCode = System.OpCode(Nibble(0xC), n1 ,n2, n3)
         system.cpu.execute(retOpCode)
 
-        assertEquals(0xF0, system.cpu.registers[n1.value])
+        assertEquals(0xF0, system.cpu.getRegisterValue(n1.value))
     }
 
     @Test
@@ -644,7 +665,7 @@ class OpCodeTests {
         val retOpCode = System.OpCode(Nibble(0xC), n1 ,n2, n3)
         system.cpu.execute(retOpCode)
 
-        assertEquals(0x12, system.cpu.registers[n1.value])
+        assertEquals(0x12, system.cpu.getRegisterValue(n1.value))
     }
 
     @Test
@@ -666,7 +687,7 @@ class OpCodeTests {
         val retOpCode = System.OpCode(Nibble(0xD), nibblex , nibbley, Nibble(n))
         system.cpu.execute(retOpCode)
 
-        assertEquals(0, system.cpu.registers[0xF])
+        assertEquals(0, system.cpu.getRegisterValue(0xF))
 
         var pixelsOn = 0
 
@@ -725,7 +746,7 @@ class OpCodeTests {
         assertEquals(false, system.display.matrix[14][5])
 
         // VF should be 1 because at least one pixel was erased
-        assertEquals(1,system.cpu.registers[0xF])
+        assertEquals(1,system.cpu.getRegisterValue(0xF))
     }
 
     @Test
@@ -775,7 +796,7 @@ class OpCodeTests {
         assertEquals(6, pixelsOn)
 
         // VF should be 1
-        assertEquals(1, system.cpu.registers[0xF])
+        assertEquals(1, system.cpu.getRegisterValue(0xF))
     }
 
     @Test
@@ -818,8 +839,10 @@ class OpCodeTests {
         assertEquals(true, display[5][0])
 
         // VF should be 0 (no collision)
-        assertEquals(0, system.cpu.registers[0xF])
+        assertEquals(0, system.cpu.getRegisterValue(0xF))
     }
+
+
 
     @Test
     fun `given Ex9E when key at Vx is pressed then programCounter should be increased`() {
@@ -963,7 +986,7 @@ class OpCodeTests {
         system.cpu.setIndexRegister(0x300)
 
         val vxRegister = 5
-        system.cpu.registers[vxRegister] = 254
+        system.cpu.setRegisterValue(vxRegister, 254)
         val retOpCode = System.OpCode(Nibble(0xF), Nibble(vxRegister), Nibble(0x3), Nibble(0x3))
         system.cpu.execute(retOpCode)
 
@@ -981,10 +1004,10 @@ class OpCodeTests {
 
         system.cpu.setIndexRegister(0x300)
 
-        system.cpu.registers[0] = 5
-        system.cpu.registers[1] = 10
-        system.cpu.registers[2] = 15
-        system.cpu.registers[3] = 20
+        system.cpu.setRegisterValue(0,5)
+        system.cpu.setRegisterValue(1,10)
+        system.cpu.setRegisterValue(2,15)
+        system.cpu.setRegisterValue(3,20)
 
         val xRegister = 3
         val retOpCode = System.OpCode(Nibble(0xF), Nibble(xRegister), Nibble(0x5), Nibble(0x5))
@@ -1008,10 +1031,10 @@ class OpCodeTests {
 
         system.cpu.setIndexRegister(0x0)
 
-        system.cpu.registers[0] = 3
-        system.cpu.registers[1] = 6
-        system.cpu.registers[2] = 9
-        system.cpu.registers[3] = 12
+        system.cpu.setRegisterValue(0, 3)
+        system.cpu.setRegisterValue(1, 6)
+        system.cpu.setRegisterValue(2, 9)
+        system.cpu.setRegisterValue(3, 12)
 
         val xRegister = 3
         val retOpCode = System.OpCode(Nibble(0xF), Nibble(xRegister), Nibble(0x5), Nibble(0x5))
@@ -1044,10 +1067,10 @@ class OpCodeTests {
         val retOpCode = System.OpCode(Nibble(0xF), Nibble(xRegister), Nibble(0x6), Nibble(0x5))
         system.cpu.execute(retOpCode)
 
-        assertEquals(5, system.cpu.registers[0])
-        assertEquals(10, system.cpu.registers[1])
-        assertEquals(15, system.cpu.registers[2])
-        assertEquals(20, system.cpu.registers[3])
+        assertEquals(5, system.cpu.getRegisterValue(0))
+        assertEquals(10, system.cpu.getRegisterValue(1))
+        assertEquals(15, system.cpu.getRegisterValue(2))
+        assertEquals(20, system.cpu.getRegisterValue(3))
 
         assertEquals(4, system.cpu.getIndexRegister())
     }

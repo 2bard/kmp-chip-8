@@ -6,8 +6,6 @@ class FrameBuffer(val width: Int = 64, val height: Int = 32) {
 
     fun getFrameBuffer() = buffer
 
-
-
     override fun toString(): String {
         val sb = StringBuilder()
         buffer.forEachIndexed { xIndex, column ->
@@ -24,5 +22,9 @@ class FrameBuffer(val width: Int = 64, val height: Int = 32) {
 
     fun getSpriteAt(x: Int, y: Int): Boolean {
         return buffer[x][y]
+    }
+
+    fun clear() {
+        buffer = Array(64) { BooleanArray(32) { false } }
     }
 }

@@ -36,10 +36,16 @@ class Memory(val ramSize: Int = DEFAULT_RAM_SIZE) {
     }
 
     fun addRom(rom: IntArray) {
-        var currentAddress = Config.PROGRAM_COUNTER_INIT
-        rom.forEach {
-            set(currentAddress, it)
-            currentAddress++
+        val startAddress = Config.PROGRAM_COUNTER_INIT
+        require(startAddress in 0 until ramSize) {
+            "Invalid ROM startAddress=$startAddress for ramSize=$ramSize"
+        }
+        require(rom.size <= ramSize - startAddress) {
+            "ROM too large: size=${rom.size}, capacity=${ramSize - startAddress} (start=$startAddress)"
+        }
+        rom.forEachIndexed { index, value ->
+            require(value in 0..0xFF) { "ROM byte at index=$index out of range: $value" }
+            set(startAddress + index, value)
         }
     }
 

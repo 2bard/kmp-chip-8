@@ -33,25 +33,78 @@ class Cpu {
     private var stackPointer = 0x0
     private var programCounter = Config.PROGRAM_COUNTER_INIT
 
-    val registers: IntArray
+    private val registers: IntArray
     private var indexRegister = 0
+    val strictMode = false
 
     fun setRegisterValue(index: Int, value: Int){
         require(value in 0..255)
+        require(index in 0..15)
+        log("Setting register value at index $index to $value")
         this.registers[index] = value
+    }
+
+    fun getRegisterValue(index: Int) : Int{
+        require(index in 0..15)
+        return this.registers[index]
     }
 
     //Stack
     fun call(address: Int){
+        // stackPointer is treated as current stack depth
+        require(stackPointer < 16) { "Stack overflow" }
         stack.addFirst(programCounter)
         stackPointer++
-        programCounter = address
+        setProgramCounter(address)
+        ensureValidState()
     }
 
     fun ret(){
-        val lastAddress = stack.removeLast()
+        println("returning")
+        require(stackPointer > 0) { "Stack underflow" }
+        val lastAddress = stack.removeFirst()
         stackPointer--
-        programCounter = lastAddress
+        setProgramCounter(lastAddress)
+        ensureValidState()
+    }
+
+    fun ensureValidState(){
+
+        if(strictMode){
+            // Stack
+            require(stackPointer in 0..16) { "Invalid stackPointer=$stackPointer" }
+            require(stack.size == stackPointer) {
+                "Stack pointer ($stackPointer) doesn't match stack size (${stack.size})"
+            }
+
+            // Registers must always remain 8-bit
+            require(registers.size == 16)
+            require(registers.all { it in 0..0xFF }) { "Register out of 8-bit range" }
+
+            // Address space safety
+            val memSize = systemInterface.getMemory().ramSize
+            require(indexRegister in 0 until memSize) { "Invalid I=$indexRegister" }
+
+            // PC should always point to a valid 2-byte opcode fetch
+            // Traditional program space starts at 0x200 in this project.
+            require(programCounter in 0x200 until memSize) { "Invalid PC=$programCounter" }
+            require(programCounter <= memSize - 2) { "PC=$programCounter cannot fetch 2 bytes" }
+            require(programCounter % 2 == 0) { "PC must be even, was $programCounter" }
+
+            // Return addresses on the stack should follow the same constraint
+            stack.forEach {
+                require(it in 0x200 until memSize) { "Invalid return address on stack: $it" }
+                require(it <= memSize - 2) { "Return address cannot fetch 2 bytes: $it" }
+                require(it % 2 == 0) { "Return address must be even: $it" }
+            }
+
+            // Timers are 8-bit in CHIP-8 and must never be negative
+            val delay = systemInterface.getTimer().getDelayTimer()
+            val sound = systemInterface.getTimer().getSoundTimer()
+            require(delay in 0..0xFF) { "Invalid delay timer=$delay" }
+            require(sound in 0..0xFF) { "Invalid sound timer=$sound" }
+        }
+
     }
 
     fun getStackPointer() = stackPointer
@@ -68,126 +121,191 @@ class Cpu {
 
     fun execute(opcode: System.OpCode) {
         val nibbles = opcode.toNibbles()
-
+        var didExecute = false;
         when(nibbles[0].value) {
             0x0 -> {
-                (combineNibbles(nibbles[2], nibbles[3])).let {
+                nibbles[3].value.let {
                     when(it) {
-                        0xE0 -> systemInterface.clearDisplay()
-                        0xEE -> ret()
+                        0x0 -> {
+                            systemInterface.clearDisplay()
+                            didExecute = true
+                        }
+                        0xE -> {
+                            ret()
+                            didExecute = true
+                        }
                     }
                 }
             }
             0x1 -> {
                 jump(nibbles[1], nibbles[2], nibbles[3])
+                didExecute = true
             }
             0x2 -> {
                 call(combineNibbles(nibbles[1], nibbles[2], nibbles[3]))
+                didExecute = true
             }
             0x3 -> {
                 se(nibbles[1], combineNibbles(nibbles[2], nibbles[3]))
+                didExecute = true
             }
             0x4 -> {
                 sne(nibbles[1], combineNibbles(nibbles[2], nibbles[3]))
+                didExecute = true
             }
             0x5 -> {
                 seVxVy(nibbles[1], nibbles[2])
+                didExecute = true
             }
             0x6 -> {
                 load(nibbles[1], combineNibbles(nibbles[2], nibbles[3]))
+                didExecute = true
             }
             0x7 -> {
                 add(nibbles[1], combineNibbles(nibbles[2], nibbles[3]))
+                didExecute = true
             }
             0x8 -> {
                 when(nibbles[3].value) {
                     0x0 -> {
                         ldVxVy(nibbles[1], nibbles[2])
+                        didExecute = true
                     }
                     0x1 -> {
                         orVxVy(nibbles[1], nibbles[2])
+                        didExecute = true
                     }
                     0x2 -> {
                         andVxVy(nibbles[1], nibbles[2])
+                        didExecute = true
                     }
                     0x3 -> {
                         xorVxVy(nibbles[1], nibbles[2])
+                        didExecute = true
                     }
                     0x4 -> {
                         addVxVy(nibbles[1], nibbles[2])
+                        didExecute = true
                     }
                     0x5 -> {
                         subVxVy(nibbles[1], nibbles[2])
+                        didExecute = true
                     }
                     0x6 -> {
                         shrVxVy(nibbles[1], nibbles[2])
+                        didExecute = true
                     }
                     0x7 -> {
                         subnVxVy(nibbles[1], nibbles[2])
+                        didExecute = true
                     }
-                    0x8 -> {
+                    0xE -> {
                         shlVxVy(nibbles[1], nibbles[2])
+                        didExecute = true
                     }
                 }
             }
             0x9 -> {
                 sneVxVy(nibbles[1], nibbles[2])
+                didExecute = true
             }
             0xA -> {
                 annn(nibbles[1], nibbles[2], nibbles[3])
+                didExecute = true
             }
             0xB -> {
                 bnnn(nibbles[1], nibbles[2], nibbles[3])
+                didExecute = true
             }
             0xC -> {
                 cxkk(nibbles[1], nibbles[2], nibbles[3])
+                didExecute = true
             }
             0xD  -> {
                 dxyn(nibbles[1], nibbles[2], nibbles[3])
+                didExecute = true
             }
             0xE  -> {
                 when (nibbles[3].value) {
                     0xE -> {
                         skp(nibbles[1])
+                        didExecute = true
                     }
 
                     0x1 -> {
                         sknp(nibbles[1])
+                        didExecute = true
                     }
                 }
             }
             0xF -> {
                 when (nibbles[2].value) {
+                    0x0 -> {
+                        when(nibbles[3].value){
+                            0x7 -> {
+                                stdt(nibbles[2])
+                                didExecute = true
+                            }
+                            0xA -> {
+                                wait4Keypress()
+                                didExecute = true
+                            }
+                        }
+                    }
                     0x1 -> {
                         when(nibbles[3].value){
-                            0x5 -> lddt(nibbles[1])
-                            0x8 -> ldst(nibbles[1])
-                            0xE -> addI(nibbles[1])
+                            0x5 -> {
+                                lddt(nibbles[1])
+                                didExecute = true
+                            }
+                            0x8 -> {
+                                ldst(nibbles[1])
+                                didExecute = true
+                            }
+                            0xE -> {
+                                addI(nibbles[1])
+                                didExecute = true
+                            }
                         }
                     }
                     0x2 -> {
                         ldf(nibbles[1])
+                        didExecute = true
                     }
                     0x3 -> {
                         ldb(nibbles[1])
+                        didExecute = true
                     }
                     0x5 -> {
                         ldivx(nibbles[1])
+                        didExecute = true
                     }
                     0x6 -> {
                         ldvxi(nibbles[1])
+                        didExecute = true
+                    }
+                    0xf -> {
+                        throw IllegalStateException("Sdfsdfsdfsdf")
                     }
                 }
             }
         }
 
+        if(didExecute == false){
+            throw IllegalStateException("Invalid opcode:" + opcode.toString())
+        }
+        ensureValidState()
+    }
+
+    fun wait4Keypress(){
+        throw IllegalStateException("not implemented")
     }
 
     //Fills V0 to VX with values from memory starting at address I. I is then set to I + x + 1.
     fun ldvxi(x: Nibble){
         log("Opcode->ldxvi")
         for (i in 0..x.value) {
-            registers[i] = systemInterface.getMemory()[indexRegister + i].toInt() and 0xFF
+            setRegisterValue(i, systemInterface.getMemory().get(indexRegister + i) and 0xFF)
         }
         indexRegister += x.value + 1
     }
@@ -197,7 +315,7 @@ class Cpu {
         log("Opcode->ldivx")
 
         for (i in 0..x.value) {
-            systemInterface.getMemory()[indexRegister + i] = registers[i]
+            systemInterface.getMemory().set(indexRegister + i, getRegisterValue(i))
         }
         indexRegister += x.value + 1
     }
@@ -208,11 +326,11 @@ class Cpu {
     fun ldb(x: Nibble){
         log("Opcode->ldb")
 
-        val value = registers[x.value]  // Get Vx value
+        val value = getRegisterValue(x.value) // Get Vx value
 
-        systemInterface.getMemory()[indexRegister] = (value / 100)
-        systemInterface.getMemory()[indexRegister + 1] = ((value / 10) % 10)
-        systemInterface.getMemory()[indexRegister + 2] = (value % 10)
+        systemInterface.getMemory().set(indexRegister, (value / 100))
+        systemInterface.getMemory().set(indexRegister + 1, ((value / 10) % 10))
+        systemInterface.getMemory().set(indexRegister + 2,(value % 10))
     }
 
     //Set I = location of sprite for digit Vx. The value of I is set to the location for the hexadecimal sprite
@@ -220,26 +338,36 @@ class Cpu {
     //font. To obtain this value, multiply VX by 5 (all font data stored in first 80 bytes of memory).
     fun ldf(x: Nibble){
         log("Opcode->ldf")
-        val digit = registers[x.value]
-        indexRegister = digit * 5
+        val digit = getRegisterValue(x.value)
+        setIndexRegister(digit * 5)
     }
 
     //Set I = I + Vx. The values of I and Vx are added, and the results are stored in I.
     fun addI(x: Nibble){
         log("Opcode->addI")
-        indexRegister += registers[x.value]
+        indexRegister += getRegisterValue(x.value)
     }
 
     //Set delay timer = Vx. Delay Timer is set equal to the value of Vx.
     fun lddt(x: Nibble){
         log("Opcode->lddt")
-        systemInterface.getTimer().setDelayTimer(registers[x.value])
+        val dtValue = getRegisterValue(x.value)
+        log("Opcode->lddt new delayTimer value is $dtValue")
+        systemInterface.getTimer().setDelayTimer(dtValue)
+    }
+
+    //Set Vx = Delay Timer. Vx is set equal to the value of Delay timber.
+    fun stdt(x: Nibble){
+        log("Opcode->stdt")
+        val delayTimer = systemInterface.getTimer().getDelayTimer()
+        log("Opcode->stdt. Delay timer is " + delayTimer)
+        setRegisterValue(x.value, delayTimer)
     }
 
     //Set sound timer = Vx. Sound Timer is set equal to the value of Vx.
     fun ldst(x: Nibble){
         log("Opcode->ldst")
-        systemInterface.getTimer().setSoundTimer(registers[x.value])
+        systemInterface.getTimer().setSoundTimer(getRegisterValue(x.value))
     }
 
     fun sknp(n1: Nibble) {
@@ -260,16 +388,15 @@ class Cpu {
         }
     }
 
-    //Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision. The interpreter reads n
-    //bytes from memory, starting at the address stored in I. These bytes are then displayed as sprites on screen
+    //Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision. The interpreter reads nibbles from memory, starting at the address stored in I. These bytes are then displayed as sprites on screen
     //at coordinates (Vx, Vy). Sprites are XOR’d onto the existing screen. If this causes any pixels to be erased,
     //VF is set to 1, otherwise it is set to 0. If the sprite is positioned so part of it is outside the coordinates of
     //the display, it wraps around to the opposite side of the screen.
     fun dxyn(n1: Nibble, n2: Nibble, n3: Nibble){
         val displayWidth = systemInterface.getFrameBuffer().width
         val displayHeight = systemInterface.getFrameBuffer().height
-        val xStart = registers[n1.value] % displayWidth
-        val yStart = registers[n2.value] % displayHeight
+        val xStart = getRegisterValue(n1.value) % displayWidth
+        val yStart = getRegisterValue(n2.value) % displayHeight
 
         val height = n3.value
         registers[0xF] = 0  // Reset collision flag
@@ -287,7 +414,7 @@ class Cpu {
         }
 
         for (row in 0 until height) {
-            val spriteByte = systemInterface.getMemory()[indexRegister + row].toInt() and 0xFF
+            val spriteByte = systemInterface.getMemory().get(indexRegister + row) and 0xFF
 
             for (bit in 0 until 8) {
                 val spritePixel = (spriteByte shr (7 - bit)) and 1
@@ -316,26 +443,26 @@ class Cpu {
         log("Opcode->cxkk")
         // Chip-8 requires an 8-bit random value.
         val rnd = randomNumberGenerator.getRandom() and 0xFF
-        registers[n1.value] = rnd and combineNibbles(n2, n3)
+        setRegisterValue(n1.value, rnd and combineNibbles(n2, n3))
     }
 
     //Jump to location nnn + V0. The program counter is set to nnn plus the value of V0.
     fun bnnn(n1: Nibble, n2: Nibble, n3: Nibble){
         log("Opcode->bnnn")
-        programCounter = (combineNibbles(n1, n2, n3)) + registers[0]
+       setProgramCounter (combineNibbles(n1, n2, n3) + getRegisterValue(0))
     }
 
     //Set I = nnn. The value of register I is set to nnn.
     fun annn(n1: Nibble, n2: Nibble, n3: Nibble){
         log("Opcode->annn n1=${n1.value} n2=${n2.value} n3=${n3.value} ")
-        indexRegister = combineNibbles(n1, n2, n3)
+        setIndexRegister(combineNibbles(n1, n2, n3))
     }
 
     //Skip next instruction if Vx != Vy. The values of Vx and Vy are compared, and if they are not equal, the
     //program counter is increased by 2.
     fun sneVxVy(x: Nibble, y: Nibble){
         log("Opcode->sneVxVy ")
-        if(registers[x.value] != registers[y.value]) {
+        if(getRegisterValue(x.value) != getRegisterValue(y.value)) {
             incrementProgramCounter()
         }
     }
@@ -345,8 +472,8 @@ class Cpu {
     fun shrVxVy(x: Nibble, y: Nibble){
         log("Opcode->shrVxVy (8xy6) x=${x.value} y=${y.value}")
         val vy = registers[y.value]
-        registers[0xF] = vy and 1
-        registers[x.value] = vy shr 1
+        setRegisterValue(0xF,vy and 1)
+        setRegisterValue(x.value, vy shr 1)
     }
 
     //Set Vx = Vy SHL 1. If the most-significant bit of Vy is 1, then VF is set to 1, otherwise 0. Then Vy is
@@ -354,8 +481,8 @@ class Cpu {
     fun shlVxVy(x: Nibble, y: Nibble){
         log("Opcode->shlVxVy (8xyE) x=${x.value} y=${y.value}")
         val vy = registers[y.value]
-        registers[0xF] = (vy shr 7) and 0x1
-        registers[x.value] = (vy shl 1) and 0xFF
+        setRegisterValue(0xF, (vy shr 7) and 0x1)
+        setRegisterValue(x.value, (vy shl 1) and 0xFF)
     }
 
     //Set Vx = Vy - Vx, set VF = NOT borrow. If Vy >= Vx, then VF is set to 1, otherwise 0. Then Vx is
@@ -364,8 +491,8 @@ class Cpu {
         log("Opcode->subnVxVy x=${x.value} y=${y.value}")
         val vx = registers[x.value]
         val vy = registers[y.value]
-        registers[0xF] = if (vy >= vx) 1 else 0
-        registers[x.value] = (vy - vx) and 0xFF
+        setRegisterValue(0xF,if (vy >= vx) 1 else 0)
+        setRegisterValue(x.value, (vy - vx) and 0xFF)
     }
 
     //Set Vx = Vx - Vy, set VF = NOT borrow. If Vx ¿ Vy, then VF is set to 1, otherwise 0. Then Vy is
@@ -373,11 +500,11 @@ class Cpu {
     fun subVxVy(x: Nibble, y: Nibble){
         log("Opcode->subVxVy")
 
-        val vx = registers[x.value]
-        val vy = registers[y.value]
+        val vx = getRegisterValue(x.value)
+        val vy = getRegisterValue(y.value)
 
-        registers[0xF] = if (vx >= vy) 1 else 0
-        registers[x.value] = (vx - vy + 256) % 256
+        setRegisterValue(0xF, if (vx >= vy) 1 else 0)
+        setRegisterValue(x.value, (vx - vy + 256) % 256)
     }
 
     //Set Vx = Vx + Vy, set VF = carry. The values of Vx and Vy are added together. If the result is greater
@@ -385,9 +512,9 @@ class Cpu {
     //in Vx.
     fun addVxVy(x: Nibble, y: Nibble){
         log("Opcode->addVxVy x=${x.value} y=${y.value}")
-        val newValue = registers[x.value] + registers[y.value]
-        registers[x.value] = newValue.toUByte().toInt()
-        registers[0xF] = if(newValue > 255) 1 else 0
+        val sum = getRegisterValue(x.value) + getRegisterValue(y.value)
+        setRegisterValue(0xF, if (sum > 0xFF) 1 else 0)
+        setRegisterValue(x.value, sum and 0xFF)
     }
 
     //Set Vx = Vx XOR Vy. Performs a bitwise exclusive OR on the values of Vx and Vy, then stores the result
@@ -395,7 +522,7 @@ class Cpu {
     //same, then the corresponding bit in the result is set to 1. Otherwise, it is 0.
     fun xorVxVy(x: Nibble, y: Nibble){
         log("Opcode->xorVxVy x=${x.value} y=${y.value}")
-        registers[x.value] = registers[x.value] xor registers[y.value]
+        setRegisterValue(x.value, getRegisterValue(x.value) xor getRegisterValue(y.value))
     }
 
     //Set Vx = Vx AND Vy. Performs a bitwise AND on the values of Vx and Vy, then stores the result in Vx.
@@ -403,7 +530,7 @@ class Cpu {
     //in the result is also 1. Otherwise, it is 0.
     fun andVxVy(x: Nibble, y: Nibble){
         log("Opcode->andVxVy x=${x.value} y=${y.value}")
-        registers[x.value] = registers[x.value] and registers[y.value]
+        setRegisterValue(x.value, getRegisterValue(x.value) and getRegisterValue(y.value))
     }
 
     //Set Vx = Vx OR Vy. Performs a bitwise OR on the values of Vx and Vy, then stores the result in Vx. A
@@ -411,33 +538,33 @@ class Cpu {
     //result is also 1. Otherwise, it is 0.
     fun orVxVy(x: Nibble, y: Nibble){
         log("Opcode->orVxVy x=${x.value} y=${y.value}")
-        registers[x.value] = registers[x.value] or registers[y.value]
+        setRegisterValue(x.value, getRegisterValue(x.value) or getRegisterValue(y.value))
     }
 
     //Set Vx = Vy. Stores the value of register Vy in register Vx.
     fun ldVxVy(x: Nibble, y: Nibble){
         log("Opcode->ldVxVy x=${x.value} y=${y.value}")
-        registers[x.value] = registers[y.value]
+        setRegisterValue(x.value,getRegisterValue(y.value))
     }
 
     //Set Vx = Vx + kk. Adds the value kk to the value of register Vx, then stores the result in Vx.
     fun add(x: Nibble, kk: Int) {
         log("Opcode->add x=${x.value} kk=$kk")
         // 7xkk wraps at 8-bit and does not affect VF.
-        registers[x.value] = (registers[x.value] + kk) and 0xFF
+        setRegisterValue(x.value,(getRegisterValue(x.value) + kk) and 0xFF)
     }
 
     //Jump to location nnn. The interpreter sets the program counter to nnn.
     fun jump(address1: Nibble, address2: Nibble, address3: Nibble){
         log("Opcode->jump address1=${address1.value} address2=${address2.value} address3=${address3.value}")
         val address = combineNibbles(address1, address2, address3)
-        programCounter = address
+        setProgramCounter(address)
     }
 
     //Set Vx = kk. The interpreter puts the value kk into register Vx.
     fun load(dest: Nibble, value: Int){
         log("Opcode->load dest=${dest.value} value=$value")
-        registers[dest.value] = value
+        setRegisterValue(dest.value, value)
     }
 
     fun seVxVy(vX: Nibble, vY: Nibble){
@@ -447,19 +574,21 @@ class Cpu {
 
     fun se(dest: Nibble, value: Int){
         log("Opcode->se dest=${dest.value} value=$value")
-        if(registers[dest.value] == value){
+        if(getRegisterValue(dest.value) == value){
             incrementProgramCounter()
         }
     }
 
     fun sne(dest: Nibble, value: Int){
         log("Opcode->sne dest=${dest.value} value=$value")
-        if(registers[dest.value] != value){
+        if(getRegisterValue(dest.value) != value){
             incrementProgramCounter()
         }
     }
 
     fun setIndexRegister(newValue: Int) {
+        require(newValue in 0 .. 4095)
+        log("Setting index register to  $newValue")
         indexRegister = newValue
     }
 
@@ -467,8 +596,14 @@ class Cpu {
         programCounter += 2
     }
 
+    fun setProgramCounter(newValue: Int){
+        log("Setting program counter to $newValue")
+        programCounter = newValue
+        ensureValidState()
+    }
+
     fun setRegisterData(index: Int, kk: Pair<Nibble, Nibble>) {
-        registers[index] = combineNibbles(kk.first, kk.second)
+        setRegisterValue(index, combineNibbles(kk.first, kk.second))
     }
 
 

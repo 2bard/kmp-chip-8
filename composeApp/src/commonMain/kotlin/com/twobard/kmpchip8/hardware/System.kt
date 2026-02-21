@@ -3,6 +3,7 @@ package com.twobard.kmpchip8.hardware
 
 import com.twobard.kmpchip8.Utils.Companion.toNibbles
 import kmpchip8.composeapp.generated.resources.Res
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,6 +26,7 @@ class System(val memory: Memory = Memory(),
             systemInterface = object : SystemInterface {
                 override fun clearDisplay() {
                    display.clear()
+                    frameBuffer.clear()
                 }
 
                 override fun getFrameBuffer(): FrameBuffer {
@@ -70,7 +72,7 @@ class System(val memory: Memory = Memory(),
                 val rom = getRom(title)
                 val intArray = rom.map { it.toInt() and 0xFF }.toIntArray()
                 loadRom(intArray)
-                startCpu()
+                startCpu(500, this@coroutineScope)
             }
         }
     }
@@ -78,14 +80,17 @@ class System(val memory: Memory = Memory(),
     val _displayData = MutableStateFlow<Array<BooleanArray>?>(null)
     val displayData: StateFlow<Array<BooleanArray>?> = _displayData
 
-    suspend fun startCpu(cyclesPerSecond: Int = 500) {
-        timer.startRunning()
+    suspend fun startCpu(cyclesPerSecond: Int = 500, coroutineScope: CoroutineScope) {
+        timer.startRunning(coroutineScope)
         val cycleDelay = 1000L / cyclesPerSecond
 
         while (timer.running) {
             val opcode = fetchOpcode()
+            cpu.ensureValidState()
             cpu.incrementProgramCounter()
+            cpu.ensureValidState()
             cpu.execute(opcode)
+            cpu.ensureValidState()
             delay(cycleDelay)
 
                 println("recomposing update. Active pixels: " + display.pixels())
@@ -123,10 +128,16 @@ class System(val memory: Memory = Memory(),
 }
 
 fun combineNibbles(vararg nibbles: Nibble): Int {
+    require(nibbles.isNotEmpty()) { "combineNibbles requires at least 1 nibble" }
+
     var result = 0
     for (n in nibbles) {
+        require(n.value in 0..0xF) { "Nibble out of range: ${n.value}" }
         result = (result shl 4) or (n.value and 0xF)
     }
+
+    // A CHIP-8 address is 12-bit (0x000..0xFFF). For opcode pieces (kk), this is also safe.
+    require(result in 0..0xFFF) { "Combined value out of 12-bit range: $result" }
     return result
 }
 

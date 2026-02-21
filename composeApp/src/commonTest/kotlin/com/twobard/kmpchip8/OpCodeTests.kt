@@ -531,14 +531,14 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given 8xy8 when x is 10 then result Vx is 20 and VF is 0`() {
+    fun `given 8xyE when x is 10 then result Vx is 20 and VF is 0`() {
 
         val x = Nibble(0)
         val xData = 10.toNibbles()
 
         system.cpu.setRegisterData(x.value, xData)
 
-        val retOpCode = System.OpCode(Nibble(0x8), x ,Nibble(0x0), Nibble(0x8))
+        val retOpCode = System.OpCode(Nibble(0x8), x ,Nibble(0x0), Nibble(0xE))
         system.cpu.execute(retOpCode)
 
         //10 x 2 = 20
@@ -549,14 +549,14 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given 8xy8 when x is 200 then result Vx is 144 and VF is 1`() {
+    fun `given 8xyE when x is 200 then result Vx is 144 and VF is 1`() {
 
         val x = Nibble(0)
         val xData = 200.toNibbles()
 
         system.cpu.setRegisterData(x.value, xData)
 
-        val retOpCode = System.OpCode(Nibble(0x8), x ,Nibble(0x0), Nibble(0x8))
+        val retOpCode = System.OpCode(Nibble(0x8), x ,Nibble(0x0), Nibble(0xE))
         system.cpu.execute(retOpCode)
 
         //200 x 2 = 400. 400 % 256 = 144

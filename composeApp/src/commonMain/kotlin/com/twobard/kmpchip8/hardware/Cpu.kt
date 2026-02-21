@@ -30,7 +30,7 @@ class Cpu {
     //"a 64-byte stack with 8-bit stack pointer"
     //using an Int here to avoid autoboxing - better perfomance
     private val stack: ArrayDeque<Int>
-    private var stackPointer = 0x0
+    //private var stackPointer = 0x0
     private var programCounter = Config.PROGRAM_COUNTER_INIT
 
     private val registers: IntArray
@@ -51,19 +51,24 @@ class Cpu {
 
     //Stack
     fun call(address: Int){
+        require(address % 2 == 0)
+        println("subroutine calling: " + address)
         // stackPointer is treated as current stack depth
-        require(stackPointer < 16) { "Stack overflow" }
+        require(stack.size < 16) { "Stack overflow" }
+        println("subroutine adding. new address=$programCounter")
         stack.addFirst(programCounter)
-        stackPointer++
+        //stackPointer++
         setProgramCounter(address)
         ensureValidState()
     }
 
     fun ret(){
-        println("returning")
-        require(stackPointer > 0) { "Stack underflow" }
+        println("subroutine returning")
+        require(stack.isNotEmpty()) { "Stack underflow" }
         val lastAddress = stack.removeFirst()
-        stackPointer--
+        println("subroutine returning. last address=$lastAddress")
+
+       // stackPointer--
         setProgramCounter(lastAddress)
         ensureValidState()
     }
@@ -72,10 +77,7 @@ class Cpu {
 
         if(strictMode){
             // Stack
-            require(stackPointer in 0..16) { "Invalid stackPointer=$stackPointer" }
-            require(stack.size == stackPointer) {
-                "Stack pointer ($stackPointer) doesn't match stack size (${stack.size})"
-            }
+
 
             // Registers must always remain 8-bit
             require(registers.size == 16)
@@ -107,7 +109,7 @@ class Cpu {
 
     }
 
-    fun getStackPointer() = stackPointer
+    fun getStackPointer() = stack.size
     fun getProgramCounter() = programCounter
     fun getFromStack(pos: Int) = stack[pos]
     fun getIndexRegister() = indexRegister
@@ -471,7 +473,7 @@ class Cpu {
     //divided by 2 and stored in Vx.
     fun shrVxVy(x: Nibble, y: Nibble){
         log("Opcode->shrVxVy (8xy6) x=${x.value} y=${y.value}")
-        val vy = registers[y.value]
+        val vy = getRegisterValue(y.value)
         setRegisterValue(0xF,vy and 1)
         setRegisterValue(x.value, vy shr 1)
     }
@@ -480,7 +482,7 @@ class Cpu {
     //multiplied by 2 and stored in Vx.
     fun shlVxVy(x: Nibble, y: Nibble){
         log("Opcode->shlVxVy (8xyE) x=${x.value} y=${y.value}")
-        val vy = registers[y.value]
+        val vy = getRegisterValue(y.value)
         setRegisterValue(0xF, (vy shr 7) and 0x1)
         setRegisterValue(x.value, (vy shl 1) and 0xFF)
     }
@@ -489,8 +491,8 @@ class Cpu {
     //subtracted from Vy, and the results stored in Vx.
     fun subnVxVy(x: Nibble, y: Nibble){
         log("Opcode->subnVxVy x=${x.value} y=${y.value}")
-        val vx = registers[x.value]
-        val vy = registers[y.value]
+        val vx = getRegisterValue(x.value)
+        val vy = getRegisterValue(y.value)
         setRegisterValue(0xF,if (vy >= vx) 1 else 0)
         setRegisterValue(x.value, (vy - vx) and 0xFF)
     }
@@ -569,7 +571,9 @@ class Cpu {
 
     fun seVxVy(vX: Nibble, vY: Nibble){
         log("Opcode->seVxVy vX=${vX.value} vY=${vY.value}")
-        se(vX, registers[vY.value])
+        if(getRegisterValue(vX.value) == getRegisterValue(vY.value)){
+            incrementProgramCounter()
+        }
     }
 
     fun se(dest: Nibble, value: Int){

@@ -36,12 +36,13 @@ class MainActivity : ComponentActivity() {
                     //system.startGame(title = "4-flags.ch8")
                     //system.startGame(title = "ibm_new.ch8")
                     //system.startGame(title = "1-chip8-logo.ch8")
+                    //system.startGame(title = "delaytimertest.ch8")
                     //system.startGame(title = "octojam1title.ch8")
-                    //system.startGame(title = "octojam2title.ch8")
                     //system.startGame(title = "octojam3title.ch8")
                     //system.startGame(title = "octojam8title.ch8")
                     //system.startGame(title = "octoachip8story.ch8")
                     //system.startGame("ibm.ch8")
+                    //system.startGame("randomnumbertest")
                 }
             }
 
@@ -49,7 +50,9 @@ class MainActivity : ComponentActivity() {
 
 
             //Text("display:" + display.value., fontSize = 32.sp)
-            App(frame, display ?: arrayOf(booleanArrayOf()))
+            App(frame, display ?: arrayOf(booleanArrayOf())) { int ->
+                system.keyboard.pressKeyAt( int)
+            }
         }
     }
 }

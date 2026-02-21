@@ -1,6 +1,7 @@
 package com.twobard.kmpchip8.hardware
 
 import com.twobard.kmpchip8.Utils
+import kotlinx.coroutines.delay
 
 interface SystemInterface {
     fun clearDisplay()
@@ -35,7 +36,7 @@ class Cpu {
 
     private val registers: IntArray
     private var indexRegister = 0
-    val strictMode = true
+    val strictMode = false
 
     fun setRegisterValue(index: Int, value: Int){
         require(value in 0..255)
@@ -51,7 +52,9 @@ class Cpu {
 
     //Stack
     fun call(address: Int){
-        require(address % 2 == 0)
+        if(strictMode){
+            require(address % 2 == 0)
+        }
         println("subroutine calling: " + address)
         // stackPointer is treated as current stack depth
         require(stack.size < 16) { "Stack overflow" }
@@ -121,7 +124,7 @@ class Cpu {
     }
     //End stack
 
-    fun execute(opcode: System.OpCode) {
+    suspend fun execute(opcode: System.OpCode) {
         val nibbles = opcode.toNibbles()
         var didExecute = false
         when(nibbles[0].value) {
@@ -249,7 +252,7 @@ class Cpu {
                                 didExecute = true
                             }
                             0xA -> {
-                                wait4Keypress()
+                                wait4Keypress(nibbles[2])
                                 didExecute = true
                             }
                         }
@@ -299,17 +302,28 @@ class Cpu {
         ensureValidState()
     }
 
-    fun wait4Keypress(){
-        throw IllegalStateException("not implemented")
+    suspend fun wait4Keypress(x: Nibble){
+        while(systemInterface.getKeyboard().getPressedKey() == null){
+            println("Waiting for key press")
+            delay(10)
+        }
+
+        systemInterface.getKeyboard().getPressedKey()?.let {
+            println("Waiting over")
+            setRegisterValue(x.value, it)
+        }
     }
 
     //Fills V0 to VX with values from memory starting at address I. I is then set to I + x + 1.
     fun ldvxi(x: Nibble){
         log("Opcode->ldxvi")
+        var currentIndexRegister = indexRegister
         for (i in 0..x.value) {
-            setRegisterValue(i, systemInterface.getMemory().get(indexRegister + i) and 0xFF)
+            setRegisterValue(i, unsigned(systemInterface.getMemory().get(currentIndexRegister)))
+            currentIndexRegister++
         }
-        indexRegister += x.value + 1
+
+        setIndexRegister(indexRegister + x.value + 1)
     }
 
     //Stores V0 to VX in memory starting at address I. I is then set to I + x + 1.
@@ -530,7 +544,7 @@ class Cpu {
         log("Opcode->addVxVy x=${x.value} y=${y.value}")
 
         val sum = getRegisterValue(x.value) + getRegisterValue(y.value)
-        setRegisterValue(x.value, sum and 0xff)
+        setRegisterValue(x.value, unsigned(sum))
         setRegisterValue(0xF, if (sum > 0xFF) 1 else 0)
     }
 

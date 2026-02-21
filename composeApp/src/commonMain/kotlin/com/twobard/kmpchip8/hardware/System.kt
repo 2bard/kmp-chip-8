@@ -4,6 +4,7 @@ package com.twobard.kmpchip8.hardware
 import com.twobard.kmpchip8.Utils.Companion.toNibbles
 import kmpchip8.composeapp.generated.resources.Res
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -68,7 +69,7 @@ class System(val memory: Memory = Memory(),
     suspend fun startGame(title: String){
 
         coroutineScope {
-            launch {
+            launch(Dispatchers.Default) {
                 val rom = getRom(title)
                 val intArray = rom.map { it.toInt() and 0xFF }.toIntArray()
                 loadRom(intArray)
@@ -91,6 +92,7 @@ class System(val memory: Memory = Memory(),
             cpu.ensureValidState()
             cpu.execute(opcode)
             cpu.ensureValidState()
+
             delay(cycleDelay)
 
                 println("recomposing update. Active pixels: " + display.pixels())

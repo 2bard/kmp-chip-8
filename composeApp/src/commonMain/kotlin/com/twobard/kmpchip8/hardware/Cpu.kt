@@ -35,7 +35,7 @@ class Cpu {
 
     private val registers: IntArray
     private var indexRegister = 0
-    val strictMode = false
+    val strictMode = true
 
     fun setRegisterValue(index: Int, value: Int){
         require(value in 0..255)
@@ -123,7 +123,7 @@ class Cpu {
 
     fun execute(opcode: System.OpCode) {
         val nibbles = opcode.toNibbles()
-        var didExecute = false;
+        var didExecute = false
         when(nibbles[0].value) {
             0x0 -> {
                 nibbles[3].value.let {
@@ -347,7 +347,7 @@ class Cpu {
     //Set I = I + Vx. The values of I and Vx are added, and the results are stored in I.
     fun addI(x: Nibble){
         log("Opcode->addI")
-        indexRegister += getRegisterValue(x.value)
+        setIndexRegister(getIndexRegister() + getRegisterValue(x.value))
     }
 
     //Set delay timer = Vx. Delay Timer is set equal to the value of Vx.
@@ -451,7 +451,7 @@ class Cpu {
     //Jump to location nnn + V0. The program counter is set to nnn plus the value of V0.
     fun bnnn(n1: Nibble, n2: Nibble, n3: Nibble){
         log("Opcode->bnnn")
-       setProgramCounter (combineNibbles(n1, n2, n3) + getRegisterValue(0))
+       setProgramCounter (combineNibbles(n1, n2, n3) + getRegisterValue(0) )
     }
 
     //Set I = nnn. The value of register I is set to nnn.
@@ -469,33 +469,44 @@ class Cpu {
         }
     }
 
-    //Set Vx = Vy SHR 1. If the least-significant bit of Vy is 1, then VF is set to 1, otherwise 0. Then Vy is
-    //divided by 2 and stored in Vx.
+    //Set Vx = Vx SHR 1. If the least-significant bit of Vx is 1, then VF is set to 1, otherwise 0. Then Vx is
+    //divided by 2.
     fun shrVxVy(x: Nibble, y: Nibble){
-        log("Opcode->shrVxVy (8xy6) x=${x.value} y=${y.value}")
-        val vy = getRegisterValue(y.value)
-        setRegisterValue(0xF,vy and 1)
-        setRegisterValue(x.value, vy shr 1)
+        log("Opcode->shrVxVy (8xy6) x=${x.value}")
+        val vx = getRegisterValue(x.value)
+        setRegisterValue(x.value, vx shr 1)
+        setRegisterValue(0xF,vx % 2)
     }
 
-    //Set Vx = Vy SHL 1. If the most-significant bit of Vy is 1, then VF is set to 1, otherwise 0. Then Vy is
-    //multiplied by 2 and stored in Vx.
+    //Set Vx = Vx SHL 1. If the most-significant bit of Vx is 1, then VF is set to 1, otherwise to 0. Then Vx is
+    //multiplied by 2.
     fun shlVxVy(x: Nibble, y: Nibble){
-        log("Opcode->shlVxVy (8xyE) x=${x.value} y=${y.value}")
-        val vy = getRegisterValue(y.value)
-        setRegisterValue(0xF, (vy shr 7) and 0x1)
-        setRegisterValue(x.value, (vy shl 1) and 0xFF)
+        log("Opcode->shlVxVy (8xyE) x=${x.value}")
+        val vx = getRegisterValue(x.value)
+
+        setRegisterValue(x.value, (vx shl 1) and 0xFF)
+        setRegisterValue(0xF, (vx shr 7) and 0x1)
     }
 
     //Set Vx = Vy - Vx, set VF = NOT borrow. If Vy >= Vx, then VF is set to 1, otherwise 0. Then Vx is
     //subtracted from Vy, and the results stored in Vx.
     fun subnVxVy(x: Nibble, y: Nibble){
         log("Opcode->subnVxVy x=${x.value} y=${y.value}")
+
         val vx = getRegisterValue(x.value)
         val vy = getRegisterValue(y.value)
-        setRegisterValue(0xF,if (vy >= vx) 1 else 0)
-        setRegisterValue(x.value, (vy - vx) and 0xFF)
+
+        val result = vy - vx
+
+        // VF = 1 if Vy >= Vx (no borrow), else 0
+        // Keep only lowest 8 bits
+        setRegisterValue(x.value, unsigned(result))
+        setRegisterValue(0xF, if (vy >= vx) 1 else 0)
+
     }
+
+    protected fun unsigned(n: Int): Int = (n + 0x100) and 0xff
+
 
     //Set Vx = Vx - Vy, set VF = NOT borrow. If Vx ¿ Vy, then VF is set to 1, otherwise 0. Then Vy is
     //subtracted from Vx, and the results stored in Vx.
@@ -504,19 +515,23 @@ class Cpu {
 
         val vx = getRegisterValue(x.value)
         val vy = getRegisterValue(y.value)
+        val newValue = vx - vy
 
-        setRegisterValue(0xF, if (vx >= vy) 1 else 0)
-        setRegisterValue(x.value, (vx - vy + 256) % 256)
+        setRegisterValue(x.value, unsigned(newValue))
+        setRegisterValue(0xF, if (newValue < 0) 0 else 1)
+
     }
+
 
     //Set Vx = Vx + Vy, set VF = carry. The values of Vx and Vy are added together. If the result is greater
     //than 8 bits (i.e., ¿ 255,) VF is set to 1, otherwise 0. Only the lowest 8 bits of the result are kept, and stored
     //in Vx.
     fun addVxVy(x: Nibble, y: Nibble){
         log("Opcode->addVxVy x=${x.value} y=${y.value}")
+
         val sum = getRegisterValue(x.value) + getRegisterValue(y.value)
+        setRegisterValue(x.value, sum and 0xff)
         setRegisterValue(0xF, if (sum > 0xFF) 1 else 0)
-        setRegisterValue(x.value, sum and 0xFF)
     }
 
     //Set Vx = Vx XOR Vy. Performs a bitwise exclusive OR on the values of Vx and Vy, then stores the result

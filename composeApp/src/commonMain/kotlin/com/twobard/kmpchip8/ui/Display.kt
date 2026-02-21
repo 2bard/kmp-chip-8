@@ -17,7 +17,7 @@ import androidx.compose.ui.unit.dp
 fun DisplayUI(display: Array<BooleanArray>) {
 
     println("recomposing")
-    val pixelSize = 18f
+    val pixelSize = 12f
     val width = display.size
     val height = if (width > 0) display[0].size else 0
     Card(

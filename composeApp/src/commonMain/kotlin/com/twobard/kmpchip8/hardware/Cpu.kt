@@ -15,6 +15,7 @@ interface SystemInterface {
 
 class Cpu {
 
+    var lastOpDesc: String? = null
     val enableLogging = true
     val systemInterface: SystemInterface
     var randomNumberGenerator: Utils.RandomNumberGeneratorInterface
@@ -25,13 +26,13 @@ class Cpu {
     ) {
         this.systemInterface = systemInterface
         this.randomNumberGenerator = randomNumberGenerator
-        this.stack = ArrayDeque<Int>(16)
+        this.stack = ArrayList<Int>(16)
         this.registers = IntArray(16)
     }
 
     //"a 64-byte stack with 8-bit stack pointer"
     //using an Int here to avoid autoboxing - better perfomance
-    private val stack: ArrayDeque<Int>
+    private val stack: ArrayList<Int>
     //private var stackPointer = 0x0
     private var programCounter = Config.PROGRAM_COUNTER_INIT
 
@@ -53,14 +54,17 @@ class Cpu {
 
     //Stack
     fun call(address: Int){
+        lastOpDesc = " CALL \t , " + argValueString(address)
+
         if(strictMode){
             require(address % 2 == 0)
         }
+
         println("subroutine calling: " + address)
         // stackPointer is treated as current stack depth
-        require(stack.size < 16) { "Stack overflow" }
+        require(stack.size <= 16) { "Stack overflow" }
         println("subroutine adding. new address=$programCounter")
-        stack.addFirst(programCounter)
+        stack.add(programCounter)
         //stackPointer++
         setProgramCounter(address)
         ensureValidState()
@@ -69,7 +73,7 @@ class Cpu {
     fun ret(){
         println("subroutine returning")
         require(stack.isNotEmpty()) { "Stack underflow" }
-        val lastAddress = stack.removeFirst()
+        val lastAddress = stack.removeLast()
         println("subroutine returning. last address=$lastAddress")
 
        // stackPointer--
@@ -120,14 +124,14 @@ class Cpu {
 
     fun log(str: String){
         if(enableLogging){
-            println(str)
+            println( "I: ${argValueString(indexRegister)} " + str)
         }
     }
     //End stack
 
     var currentCounter: String? = null
 
-    suspend fun execute(opcode: System.OpCode, currentCounter: String?) {
+    suspend fun execute(opcode: System.OpCode, currentCounter: String? = null) {
         val nibbles = opcode.toNibbles()
         var didExecute = false
         this.currentCounter = currentCounter
@@ -252,7 +256,7 @@ class Cpu {
                     0x0 -> {
                         when(nibbles[3].value){
                             0x7 -> {
-                                stdt(nibbles[2])
+                                stdt(nibbles[1]) //Fx07
                                 didExecute = true
                             }
                             0xA -> {
@@ -302,6 +306,9 @@ class Cpu {
 
         if(didExecute == false){
             throw IllegalStateException("Invalid opcode:" + opcode.toString())
+        }
+        lastOpDesc?.let {
+            log(" DEBUGGAH I: " + indexRegister.toHexString(CustomHexFormat()) + " PC: " + programCounter.toHexString(CustomHexFormat()) + " " + it)
         }
         ensureValidState()
     }
@@ -364,23 +371,29 @@ class Cpu {
 
     //Set I = I + Vx. The values of I and Vx are added, and the results are stored in I.
     fun addI(x: Nibble){
-        log("DEBUGGAH " + currentCounter + " - ADD \t I, "+ regValueString(x))
+        lastOpDesc = " ADD \t I, "+ regValueString(x)
         setIndexRegister(getIndexRegister() + getRegisterValue(x.value))
     }
 
-    //Set delay timer = Vx. Delay Timer is set equal to the value of Vx.
+    /**
+     * Fx15 - LOAD DELAY, Vx
+     * Move the value stored in the specified source register into the delay
+     * timer.
+     */
     fun lddt(x: Nibble){
-        log("Opcode->lddt")
         val dtValue = getRegisterValue(x.value)
-        log("Opcode->lddt new delayTimer value is $dtValue")
+        lastOpDesc = " LOAD DELAY, "+ regValueString(x)
         systemInterface.getTimer().setDelayTimer(dtValue)
     }
 
-    //Set Vx = Delay Timer. Vx is set equal to the value of Delay timber.
+    /**
+     * Fx07 - LOAD Vx, DELAY
+     * Move the value of the delay timer into the target register.
+     */
     fun stdt(x: Nibble){
-        log("Opcode->stdt")
         val delayTimer = systemInterface.getTimer().getDelayTimer()
-        log("Opcode->stdt. Delay timer is " + delayTimer)
+        lastOpDesc = " LOAD "+ regValueString(x)  + ", DELAY"
+
         setRegisterValue(x.value, delayTimer)
     }
 
@@ -426,7 +439,7 @@ class Cpu {
     //the display, it wraps around to the opposite side of the screen.
     fun dxyn(n1: Nibble, n2: Nibble, n3: Nibble){
 
-        log("DEBUGGAH " + currentCounter + " - DRW \t ${regValueString(n1)} ${regValueString(n2)} ${argValueString(n3)}")
+        lastOpDesc = " - DRW \t ${regValueString(n1)} ${regValueString(n2)} ${argValueString(n3)}"
 
         val displayWidth = systemInterface.getFrameBuffer().width
         val displayHeight = systemInterface.getFrameBuffer().height
@@ -478,7 +491,9 @@ class Cpu {
         log("Opcode->cxkk")
         // Chip-8 requires an 8-bit random value.
         val rnd = randomNumberGenerator.getRandom() and 0xFF
-        setRegisterValue(n1.value, rnd and combineNibbles(n2, n3))
+        var newValue = rnd and combineNibbles(n2, n3)
+        lastOpDesc = " - RND \t ${regValueString(n1)} ${argValueString(newValue)}"
+        setRegisterValue(n1.value, newValue)
     }
 
     //Jump to location nnn + V0. The program counter is set to nnn plus the value of V0.
@@ -490,8 +505,8 @@ class Cpu {
     //Set I = nnn. The value of register I is set to nnn.
     fun annn(n1: Nibble, n2: Nibble, n3: Nibble){
         val dest = combineNibbles(n1, n2, n3)
-        log("DEBUGGAH " + currentCounter + " - LD \t I, "+dest.toHexString(CustomHexFormat()))
         setIndexRegister(dest)
+        lastOpDesc = " - LOAD \t I, "+dest.toHexString(CustomHexFormat())
     }
 
     //Skip next instruction if Vx != Vy. The values of Vx and Vy are compared, and if they are not equal, the
@@ -600,21 +615,21 @@ class Cpu {
 
     //Set Vx = Vx + kk. Adds the value kk to the value of register Vx, then stores the result in Vx.
     fun add(x: Nibble, kk: Int) {
-        log("DEBUGGAH " + currentCounter + " - ADD \t ${regValueString(x)}, ${kk.toHexString(CustomHexFormat())}")
+        lastOpDesc = " - ADD \t ${regValueString(x)}, ${kk.toHexString(CustomHexFormat())}"
         // 7xkk wraps at 8-bit and does not affect VF.
         setRegisterValue(x.value,(getRegisterValue(x.value) + kk) and 0xFF)
     }
 
     //Jump to location nnn. The interpreter sets the program counter to nnn.
     fun jump(address1: Nibble, address2: Nibble, address3: Nibble){
-        log("Opcode->jump address1=${address1.value} address2=${address2.value} address3=${address3.value}")
         val address = combineNibbles(address1, address2, address3)
+        lastOpDesc = " - JP \t ${argValueString(address)}"
         setProgramCounter(address)
     }
 
     //Set Vx = kk. The interpreter puts the value kk into register Vx.
     fun load(dest: Nibble, value: Int){
-        log("DEBUGGAH " + currentCounter + " - LD \t V"+dest.value.toHexString(CustomHexFormat()) + ", " + "#${value.toHexString(CustomHexFormat())}")
+        lastOpDesc = " - LOAD V"+dest.value.toHexString(CustomHexFormat()) + ", " + "#${value.toHexString(CustomHexFormat())}"
         setRegisterValue(dest.value, value)
     }
 
@@ -626,14 +641,14 @@ class Cpu {
     }
 
     fun se(dest: Nibble, value: Int){
-        log("Opcode->se dest=${dest.value} value=$value")
+        lastOpDesc = " - SKE \t ${regValueString(dest)}, ${argValueString(value)}"
         if(getRegisterValue(dest.value) == value){
             incrementProgramCounter()
         }
     }
 
     fun sne(dest: Nibble, value: Int){
-        log("DEBUGGAH " + currentCounter + " - SNE \t ${regValueString(dest)}, ${argValueString(value)}")
+        lastOpDesc = " - SKNE \t ${regValueString(dest)}, ${argValueString(value)}"
         if(getRegisterValue(dest.value) != value){
             incrementProgramCounter()
         }

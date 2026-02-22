@@ -95,10 +95,10 @@ class System(val memory: Memory = Memory(),
         while (timer.running) {
             val opcode = fetchOpcode()
             cpu.ensureValidState()
-            val currentCounter = cpu.getProgramCounter()
+            //val currentCounter = cpu.getProgramCounter()
             cpu.incrementProgramCounter()
             cpu.ensureValidState()
-            cpu.execute(opcode, currentCounter.toHexString(CustomHexFormat()))
+            cpu.execute(opcode, cpu.getProgramCounter().toHexString(CustomHexFormat()))
             cpu.ensureValidState()
 
             delay(cycleDelay)

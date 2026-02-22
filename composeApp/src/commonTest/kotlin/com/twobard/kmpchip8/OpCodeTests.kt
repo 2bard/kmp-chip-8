@@ -8,6 +8,7 @@ import com.twobard.kmpchip8.hardware.System
 import com.twobard.kmpchip8.hardware.combineNibbles
 import dev.mokkery.verify
 import dev.mokkery.verify.VerifyMode.Companion.atMost
+import kotlinx.coroutines.test.runTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -23,7 +24,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given a Load opcode when executed then register should have new value at correct destination`() {
+    fun `given a Load opcode when executed then register should have new value at correct destination`() = runTest {
 
         val destination = 0xA
         val value = 0x05.toNibbles()
@@ -35,7 +36,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given a CLS opcode when executed then register should have new value at correct destination`() {
+    fun `given a CLS opcode when executed then register should have new value at correct destination`() = runTest {
         val loadOpCode = System.OpCode(Nibble(0x0), Nibble(0x0), Nibble(0xE), Nibble(0x0))
         system.cpu.execute(loadOpCode)
 
@@ -45,7 +46,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given a JMP opcode when executed then register should have new value at correct destination`() {
+    fun `given a JMP opcode when executed then register should have new value at correct destination`() = runTest {
         // Jump (1nnn) sets PC = nnn. PC must remain even (2-byte opcodes).
         val addressPt1 = Nibble(0xA)
         val addressPt2 = Nibble(0x3)
@@ -61,7 +62,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given a RET opcode when executed then programCounter and stackPointer are restored`() {
+    fun `given a RET opcode when executed then programCounter and stackPointer are restored`() = runTest {
 
         val initialPc = system.cpu.getProgramCounter()
 
@@ -91,7 +92,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given a CALL opcode when executed then programCounter and Stack should be in correct state`() {
+    fun `given a CALL opcode when executed then programCounter and Stack should be in correct state`() = runTest {
 
         // call nnn (2nnn) pushes the current PC (call site) on the stack and sets PC to nnn.
         // PC must remain even (2-byte opcodes), so use an even nnn.
@@ -103,7 +104,7 @@ class OpCodeTests {
         system.cpu.execute(callOpCode)
 
         //Check programCounter
-        assertEquals(combineNibbles(addressPt1, addressPt2, addressPt3), system.cpu.getProgramCounter())
+        assertEquals(combineNibbles(addressPt1, addressPt2, addressPt3), system.cpu.getProgramCounter() + 2)
 
         //Check stackPointer (treated as depth)
         assertEquals(1, system.cpu.getStackPointer())
@@ -113,7 +114,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given 3xkk when Vx == kk then increment program counter by 2`() {
+    fun `given 3xkk when Vx == kk then increment program counter by 2`() = runTest {
 
         val Vx = Nibble(0xA)
         val kk = 255.toNibbles()
@@ -129,7 +130,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given 4xkk when Vx == kk then program counter stays the same`() {
+    fun `given 4xkk when Vx == kk then program counter stays the same`() = runTest {
 
         val Vx = Nibble(0xA)
         val kk = 255.toNibbles()
@@ -145,7 +146,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given 4xkk when Vx !== kk then program counter stays the same`() {
+    fun `given 4xkk when Vx !== kk then program counter stays the same`() = runTest {
 
         val Vx = Nibble(0xA)
         val kk = 255.toNibbles()
@@ -161,7 +162,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given 5xy0 when Vx == Vy then program counter increments`() {
+    fun `given 5xy0 when Vx == Vy then program counter increments`() = runTest {
 
         val value = 255.toNibbles()
         val x = Nibble(0)
@@ -177,7 +178,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given 5xy0 when Vx !== Vy then program counter stays the same`() {
+    fun `given 5xy0 when Vx !== Vy then program counter stays the same`() = runTest {
 
         val valueA = 255.toNibbles()
         val valueB = 254.toNibbles()
@@ -194,7 +195,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given 7xkk when executed then Vx should equal Vx + kk`() {
+    fun `given 7xkk when executed then Vx should equal Vx + kk`() = runTest {
 
         val pos = Nibble(0)
         val existingData = 10.toNibbles()
@@ -209,7 +210,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given 8xy0 when executed then Vx should equal Vy`() {
+    fun `given 8xy0 when executed then Vx should equal Vy`() = runTest {
 
         val x = Nibble(0)
         val y = Nibble(1)
@@ -225,7 +226,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given 8xy1 when x is 170 and y is 85 then Vx is 255`() {
+    fun `given 8xy1 when x is 170 and y is 85 then Vx is 255`() = runTest {
 
         val x = Nibble(0)
         val y = Nibble(1)
@@ -243,7 +244,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given 8xy1 when x is 255 and y is 128 then Vx is 255`() {
+    fun `given 8xy1 when x is 255 and y is 128 then Vx is 255`() = runTest {
 
         val x = Nibble(0)
         val y = Nibble(1)
@@ -260,7 +261,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given 8xy1 when x is 0 and y is 0 then Vx is 0`() {
+    fun `given 8xy1 when x is 0 and y is 0 then Vx is 0`() = runTest {
 
         val x = Nibble(0)
         val y = Nibble(1)
@@ -277,7 +278,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given 8xy2 when x is 51 and y is 85 then Vx is 17`() {
+    fun `given 8xy2 when x is 51 and y is 85 then Vx is 17`() = runTest {
 
         val x = Nibble(0)
         val y = Nibble(1)
@@ -295,7 +296,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given 8xy2 when x is 255 and y is 128 then Vx is 128`() {
+    fun `given 8xy2 when x is 255 and y is 128 then Vx is 128`() = runTest {
 
         val x = Nibble(0)
         val y = Nibble(1)
@@ -313,7 +314,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given 8xy3 when x is 255 and y is 128 then Vx is 127`() {
+    fun `given 8xy3 when x is 255 and y is 128 then Vx is 127`() = runTest {
 
         val x = Nibble(0)
         val y = Nibble(1)
@@ -331,7 +332,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given 8xy3 when x is 255 and y is 0 then Vx is 255`() {
+    fun `given 8xy3 when x is 255 and y is 0 then Vx is 255`() = runTest {
 
         val x = Nibble(0)
         val y = Nibble(1)
@@ -349,7 +350,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given 8xy3 when x is 51 and y is 85 then Vx is 102`() {
+    fun `given 8xy3 when x is 51 and y is 85 then Vx is 102`() = runTest {
 
         val x = Nibble(0)
         val y = Nibble(1)
@@ -367,7 +368,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given 8xy4 when x is 0 and y is 1 then Vx is 1`() {
+    fun `given 8xy4 when x is 0 and y is 1 then Vx is 1`() = runTest {
 
         val x = Nibble(0)
         val y = Nibble(1)
@@ -388,7 +389,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given 8xy4 when x is 128 and y is 128 then Vx is 0 and carry is 1`() {
+    fun `given 8xy4 when x is 128 and y is 128 then Vx is 0 and carry is 1`() = runTest {
 
         val x = Nibble(0)
         val y = Nibble(1)
@@ -409,7 +410,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given 8xy5 when x is 10 and y is 5 then Vx is 5 and VF is 1`() {
+    fun `given 8xy5 when x is 10 and y is 5 then Vx is 5 and VF is 1`() = runTest {
 
         val x = Nibble(0)
         val y = Nibble(1)
@@ -430,7 +431,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given 8xy5 when x is 5 and y is 10 then Vx is 251 and VF is 0`() {
+    fun `given 8xy5 when x is 5 and y is 10 then Vx is 251 and VF is 0`() = runTest {
 
         val x = Nibble(0)
         val y = Nibble(1)
@@ -451,7 +452,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given 8xy6 when x is 7 and then Vx is 3 and VF is 1`() {
+    fun `given 8xy6 when x is 7 and then Vx is 3 and VF is 1`() = runTest {
 
         val x = Nibble(0)
         val y = Nibble(0)
@@ -470,7 +471,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given 8xy6 when x is 10 and then Vx is 5 and VF is 0`() {
+    fun `given 8xy6 when x is 10 and then Vx is 5 and VF is 0`() = runTest {
 
         val x = Nibble(0)
         val y = Nibble(0)
@@ -489,7 +490,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given 8xy7 when x is 5 and y is 10 then Vx is 5 and VF is 1`() {
+    fun `given 8xy7 when x is 5 and y is 10 then Vx is 5 and VF is 1`() = runTest {
 
         val x = Nibble(0)
         val y = Nibble(1)
@@ -510,7 +511,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given 8xy7 when x is 10 and y is 5 then Vx is 251 and VF is 0`() {
+    fun `given 8xy7 when x is 10 and y is 5 then Vx is 251 and VF is 0`() = runTest {
 
         val x = Nibble(0)
         val y = Nibble(1)
@@ -531,7 +532,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given 8xyE when x is 10 then result Vx is 20 and VF is 0`() {
+    fun `given 8xyE when x is 10 then result Vx is 20 and VF is 0`() = runTest {
 
         val x = Nibble(0)
         val xData = 10.toNibbles()
@@ -549,14 +550,14 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given 8xyE when x is 200 then result Vx is 144 and VF is 1`() {
+    fun `given 8xyE when x is 200 then result Vx is 144 and VF is 1`() = runTest {
 
         val x = Nibble(0)
         val xData = 200.toNibbles()
 
         system.cpu.setRegisterData(x.value, xData)
 
-        val retOpCode = System.OpCode(Nibble(0x8), x ,Nibble(0x0), Nibble(0xE))
+        val retOpCode = System.OpCode(Nibble(0x8), x ,Nibble(0xE), Nibble(0xE))
         system.cpu.execute(retOpCode)
 
         //200 x 2 = 400. 400 % 256 = 144
@@ -567,7 +568,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given 9xy0 when Vx != Vy then increment program counter`() {
+    fun `given 9xy0 when Vx != Vy then increment program counter`() = runTest {
 
         val x = Nibble(0)
         val xData = 200.toNibbles()
@@ -584,7 +585,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given 9xy0 when Vx == Vy then do not increment program counter`() {
+    fun `given 9xy0 when Vx == Vy then do not increment program counter`() = runTest {
 
         val x = Nibble(0)
         val xData = 200.toNibbles()
@@ -602,7 +603,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given Annn when nnn == 6 then indexRegister == 6`() {
+    fun `given Annn when nnn == 6 then indexRegister == 6`() = runTest {
 
         val n1 = Nibble(0x1)
         val n2 = Nibble(0x2)
@@ -615,7 +616,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given Bnnn when nnn == 0x206 and V0 == 6 then programCounter == 0x20C`() {
+    fun `given Bnnn when nnn == 0x206 and V0 == 6 then programCounter == 0x20C`() = runTest {
 
         // Bnnn jumps to nnn + V0. PC must remain even (2-byte opcodes) and in 0x200..0xFFE.
         val n1 = Nibble(0x2)
@@ -631,7 +632,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given Cxkk when x == 7 and kk == F0 and random == 0xF3 then Vx == F0`() {
+    fun `given Cxkk when x == 7 and kk == F0 and random == 0xF3 then Vx == F0`() = runTest {
 
         val n1 = Nibble(0x7)
         val n2 = Nibble(0xF)
@@ -650,7 +651,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given Cxkk when x == 7 and kk == FF and random == 0x12 then Vx == 0xF  `() {
+    fun `given Cxkk when x == 7 and kk == FF and random == 0x12 then Vx == 0xF  `() = runTest {
 
         val n1 = Nibble(0xF)
         val n2 = Nibble(0xF)
@@ -669,7 +670,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given Dxyn when Vx == 10 Vy == 5 and n == 5 then 4 pixels should turn on`() {
+    fun `given Dxyn when Vx == 10 Vy == 5 and n == 5 then 4 pixels should turn on`() = runTest {
 
         system.cpu.setIndexRegister(0x300)
         system.memory[0x300] = combineNibbles(Nibble(0xF), Nibble(0x0))
@@ -707,7 +708,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given Dxyn when V1 == 10 V2 == 5 and n == 5 then 3 pixels should turn on and collision == 1`() {
+    fun `given Dxyn when V1 == 10 V2 == 5 and n == 5 then 3 pixels should turn on and collision == 1`() = runTest {
 
         system.cpu.setIndexRegister(0x300)
         system.memory[0x300] = combineNibbles(Nibble(0xF), Nibble(0x0))
@@ -750,7 +751,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given Dxyn when Vx == 10 Vy == 5 and n == 2 then pixels should turn on with collision`() {
+    fun `given Dxyn when Vx == 10 Vy == 5 and n == 2 then pixels should turn on with collision`() = runTest {
 
         system.cpu.setIndexRegister(0x300)
 
@@ -800,7 +801,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given Dxyn when sprite exceeds screen boundaries then it wraps correctly`() {
+    fun `given Dxyn when sprite exceeds screen boundaries then it wraps correctly`() = runTest {
         // Setup
         system.cpu.setIndexRegister(0x300)
         system.memory[0x300] = 0b11110000
@@ -845,7 +846,7 @@ class OpCodeTests {
 
 
     @Test
-    fun `given Ex9E when key at Vx is pressed then programCounter should be increased`() {
+    fun `given Ex9E when key at Vx is pressed then programCounter should be increased`() = runTest {
 
         val pos = Nibble(0)
         val existingData = 0.toNibbles()
@@ -859,6 +860,14 @@ class OpCodeTests {
                     return false
                 }
             }
+
+            override fun getPressedKey(): Int? {
+                return null
+            }
+
+            override fun pressKeyAt(pos: Int) {
+                TODO("Not yet implemented")
+            }
         }
 
         val retOpCode = System.OpCode(Nibble(0xE), pos ,Nibble(0x9), Nibble(0xE))
@@ -868,7 +877,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given Ex9E when key at Vx is not pressed then programCounter should not be increased`() {
+    fun `given Ex9E when key at Vx is not pressed then programCounter should not be increased`() = runTest {
 
         val pos = Nibble(0)
         val existingData = 0.toNibbles()
@@ -878,6 +887,14 @@ class OpCodeTests {
             override fun getKeyAt(pos: Int): Boolean {
                 return false
             }
+
+            override fun getPressedKey(): Int? {
+                return null
+            }
+
+            override fun pressKeyAt(pos: Int) {
+
+            }
         }
 
         val retOpCode = System.OpCode(Nibble(0xE), pos ,Nibble(0x9), Nibble(0xE))
@@ -887,7 +904,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given ExA1 when key at Vx is pressed then programCounter should not be increased`() {
+    fun `given ExA1 when key at Vx is pressed then programCounter should not be increased`() = runTest {
 
         val pos = Nibble(0)
         val existingData = 0.toNibbles()
@@ -901,6 +918,14 @@ class OpCodeTests {
                     return false
                 }
             }
+
+            override fun getPressedKey(): Int? {
+                return null
+            }
+
+            override fun pressKeyAt(pos: Int) {
+                TODO("Not yet implemented")
+            }
         }
 
         val retOpCode = System.OpCode(Nibble(0xE), pos ,Nibble(0xA), Nibble(0x1))
@@ -910,7 +935,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given ExA1 when key at Vx is not pressed then programCounter should be increased`() {
+    fun `given ExA1 when key at Vx is not pressed then programCounter should be increased`() = runTest {
 
         val pos = Nibble(0)
         val existingData = 0.toNibbles()
@@ -922,6 +947,14 @@ class OpCodeTests {
                     return false
 
             }
+
+            override fun getPressedKey(): Int? {
+                return null
+            }
+
+            override fun pressKeyAt(pos: Int) {
+                TODO("Not yet implemented")
+            }
         }
 
         val retOpCode = System.OpCode(Nibble(0xE), pos ,Nibble(0xA), Nibble(0x1))
@@ -930,7 +963,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given Fx15 when Vx == 100 then delay timer should be set to 100`() {
+    fun `given Fx15 when Vx == 100 then delay timer should be set to 100`() = runTest {
 
         val existingData = 100.toNibbles()
         val pos = Nibble(0x0)
@@ -942,7 +975,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given Fx07 when Vx == 100 then sound timer should be set to 100`() {
+    fun `given Fx07 when Vx == 100 then sound timer should be set to 100`() = runTest {
 
         val existingData = 100.toNibbles()
         val pos = Nibble(0x0)
@@ -954,7 +987,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given Fx1E when Vx == 100 then indexRegister should be (indexRegister + Vx)`() {
+    fun `given Fx1E when Vx == 100 then indexRegister should be (indexRegister + Vx)`() = runTest {
 
         val existingData = 100.toNibbles()
         val pos = Nibble(0x0)
@@ -968,7 +1001,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given Fx29 when Vx == 0x7 then indexRegister should be (indexRegister + Vx)`() {
+    fun `given Fx29 when Vx == 0x7 then indexRegister should be (indexRegister + Vx)`() = runTest {
 
         val existingData = 0x7.toNibbles()
         val pos = Nibble(5)
@@ -980,7 +1013,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given Fx33 when Vx = 254 then memory stores 2, 5, 4`() {
+    fun `given Fx33 when Vx = 254 then memory stores 2, 5, 4`() = runTest {
 
         // Set index register
         system.cpu.setIndexRegister(0x300)
@@ -1000,7 +1033,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given Fx55 when V0 to V3 are set then memory stores values and I increments`() {
+    fun `given Fx55 when V0 to V3 are set then memory stores values and I increments`() = runTest {
 
         system.cpu.setIndexRegister(0x300)
 
@@ -1027,7 +1060,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given Fx55 when V0 to V3 are set and I starts at 0 then memory stores values and I increments`() {
+    fun `given Fx55 when V0 to V3 are set and I starts at 0 then memory stores values and I increments`() = runTest {
 
         system.cpu.setIndexRegister(0x0)
 
@@ -1054,7 +1087,7 @@ class OpCodeTests {
     }
 
     @Test
-    fun `given Fx65 when memory has values then V0 to V3 are loaded and I increments`() {
+    fun `given Fx65 when memory has values then V0 to V3 are loaded and I increments`() = runTest {
 
         system.cpu.setIndexRegister(0)
 

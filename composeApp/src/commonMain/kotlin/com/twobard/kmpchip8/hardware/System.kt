@@ -16,13 +16,16 @@ import kotlin.text.HexFormat
 class System(
     val strictMode: Boolean,
     val logging: Boolean,
-            var memory: Memory = Memory(),
-             var frameBuffer: FrameBuffer = FrameBuffer(),
-             var keyboard: KeyboardInterface = Keyboard(),
-             var timer : Timer = Timer(),
-             var font: Config.Chip8Font = Config.DEFAULT_FONT,
-             var display: Display = Display()) {
+    var memory: Memory = Memory(),
+    var frameBuffer: FrameBuffer = FrameBuffer(),
+    var keyboard: KeyboardInterface = Keyboard(),
+    var timer: Timer = Timer(),
+    var font: Config.Chip8Font = Config.DEFAULT_FONT,
+    var display: Display = Display()
+) {
 
+    val _displayData = MutableStateFlow<Array<BooleanArray>?>(null)
+    val displayData: StateFlow<Array<BooleanArray>?> = _displayData
 
     lateinit var cpu: Cpu
 
@@ -31,7 +34,7 @@ class System(
         createCpu(strictMode, logging)
     }
 
-    fun createCpu(strictMode : Boolean, logging: Boolean){
+    fun createCpu(strictMode: Boolean, logging: Boolean) {
         cpu = Cpu(
             strictMode = strictMode,
             enableLogging = logging,
@@ -64,31 +67,32 @@ class System(
         )
     }
 
-    fun loadFont(memory: Memory, font: Config.Chip8Font){
+    fun loadFont(memory: Memory, font: Config.Chip8Font) {
         require(font.sprites.size == 80)
-        font.sprites.forEachIndexed{ index, sprite ->
+        font.sprites.forEachIndexed { index, sprite ->
             memory[index] = sprite
         }
     }
 
     fun fetchOpcode(): OpCode {
         val high = memory.get(cpu.getProgramCounter())
-        val low  = memory.get(cpu.getProgramCounter() + 1)
+        val low = memory.get(cpu.getProgramCounter() + 1)
 
-        val result  = OpCode(high, low)
+        val result = OpCode(high, low)
         return result
     }
 
-    fun clearState(){
+    fun clearState() {
         memory = Memory()
         frameBuffer = FrameBuffer()
         display = Display()
         timer = Timer()
         keyboard = Keyboard()
+        _displayData.value = display.copy()
         createCpu(strictMode, logging)
     }
 
-    suspend fun startGame(title: String){
+    suspend fun startGame(title: String) {
 
         clearState()
         //Clear all
@@ -102,8 +106,6 @@ class System(
         }
     }
 
-    val _displayData = MutableStateFlow<Array<BooleanArray>?>(null)
-    val displayData: StateFlow<Array<BooleanArray>?> = _displayData
 
     suspend fun startCpu(cyclesPerSecond: Int = 500, coroutineScope: CoroutineScope) {
         timer.startRunning(coroutineScope)
@@ -120,8 +122,9 @@ class System(
 
             delay(cycleDelay)
 
-                println("recomposing update. Active pixels: " + display.pixels())
+            if(display.requiresDraw()){
                 _displayData.value = display.copy()
+            }
 
         }
     }
@@ -130,7 +133,7 @@ class System(
         display.clear()
     }
 
-    suspend fun getRom(title: String) : ByteArray {
+    suspend fun getRom(title: String): ByteArray {
         return Res.readBytes("files/$title")
     }
 
@@ -140,14 +143,19 @@ class System(
 
     data class OpCode(val high: Int, val low: Int) {
 
-        constructor(n1: Nibble, n2: Nibble, n3: Nibble, n4: Nibble) : this(((n1.value shl 4) or (n2.value and 0xF)), ((n3.value shl 4) or (n4.value and 0xF)))
+        constructor(
+            n1: Nibble,
+            n2: Nibble,
+            n3: Nibble,
+            n4: Nibble
+        ) : this(((n1.value shl 4) or (n2.value and 0xF)), ((n3.value shl 4) or (n4.value and 0xF)))
 
         init {
             require(high <= 255)
             require(low <= 255)
         }
 
-        fun toNibbles() : List<Nibble> {
+        fun toNibbles(): List<Nibble> {
             return high.toNibbles().toList().plus(low.toNibbles().toList())
         }
     }

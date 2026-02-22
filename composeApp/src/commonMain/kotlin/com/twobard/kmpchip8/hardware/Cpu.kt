@@ -19,6 +19,8 @@ class Cpu {
     var enableLogging = true
     val systemInterface: SystemInterface
     var randomNumberGenerator: Utils.RandomNumberGeneratorInterface
+    val debugHexFormat = CustomHexFormat()
+    fun customHexFormat() = debugHexFormat
 
     constructor(
         enableLogging: Boolean,
@@ -64,23 +66,21 @@ class Cpu {
             require(address % 2 == 0)
         }
 
-        println("subroutine calling: " + address)
+        log("subroutine calling: $address")
         // stackPointer is treated as current stack depth
         require(stack.size <= 16) { "Stack overflow" }
-        println("subroutine adding. new address=$programCounter")
+        log("subroutine adding. new address=$programCounter")
         stack.add(programCounter)
-        //stackPointer++
         setProgramCounter(address)
         ensureValidState()
     }
 
     fun ret(){
-        println("subroutine returning")
+        log("subroutine returning")
         require(stack.isNotEmpty()) { "Stack underflow" }
         val lastAddress = stack.removeLast()
-        println("subroutine returning. last address=$lastAddress")
+        log("subroutine returning. last address=$lastAddress")
 
-       // stackPointer--
         setProgramCounter(lastAddress)
         ensureValidState()
     }
@@ -88,9 +88,6 @@ class Cpu {
     fun ensureValidState(){
 
         if(strictMode){
-            // Stack
-
-
             // Registers must always remain 8-bit
             require(registers.size == 16)
             require(registers.all { it in 0..0xFF }) { "Register out of 8-bit range" }
@@ -302,7 +299,7 @@ class Cpu {
                         didExecute = true
                     }
                     0xf -> {
-                        throw IllegalStateException("Sdfsdfsdfsdf")
+                        throw IllegalStateException("Invalid opcode")
                     }
                 }
             }
@@ -312,19 +309,19 @@ class Cpu {
             throw IllegalStateException("Invalid opcode:" + opcode.toString())
         }
         lastOpDesc?.let {
-            log(" DEBUGGAH I: " + indexRegister.toHexString(CustomHexFormat()) + " PC: " + programCounter.toHexString(CustomHexFormat()) + " " + it)
+            log(" DEBUGGAH I: " + indexRegister.toHexString(customHexFormat()) + " PC: " + programCounter.toHexString(customHexFormat()) + " " + it)
         }
         ensureValidState()
     }
 
     suspend fun wait4Keypress(x: Nibble){
         while(systemInterface.getKeyboard().getPressedKey() == null){
-            println("Waiting for key press")
+            log("Waiting for key press")
             delay(10)
         }
 
         systemInterface.getKeyboard().getPressedKey()?.let {
-            println("Waiting over")
+            log("Waiting over")
             setRegisterValue(x.value, it)
         }
     }
@@ -426,15 +423,15 @@ class Cpu {
     }
 
     fun regValueString(n: Nibble) : String {
-        return "V${n.value.toHexString(CustomHexFormat())}"
+        return "V${n.value.toHexString(customHexFormat())}"
     }
 
     fun argValueString(n: Nibble) : String {
-        return "#${n.value.toHexString(CustomHexFormat())}"
+        return "#${n.value.toHexString(customHexFormat())}"
     }
 
     fun argValueString(n: Int) : String {
-        return "#${n.toHexString(CustomHexFormat())}"
+        return "#${n.toHexString(customHexFormat())}"
     }
 
     //Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision. The interpreter reads nibbles from memory, starting at the address stored in I. These bytes are then displayed as sprites on screen
@@ -495,7 +492,7 @@ class Cpu {
         log("Opcode->cxkk")
         // Chip-8 requires an 8-bit random value.
         val rnd = randomNumberGenerator.getRandom() and 0xFF
-        var newValue = rnd and combineNibbles(n2, n3)
+        val newValue = rnd and combineNibbles(n2, n3)
         lastOpDesc = " - RND \t ${regValueString(n1)} ${argValueString(newValue)}"
         setRegisterValue(n1.value, newValue)
     }
@@ -510,7 +507,7 @@ class Cpu {
     fun annn(n1: Nibble, n2: Nibble, n3: Nibble){
         val dest = combineNibbles(n1, n2, n3)
         setIndexRegister(dest)
-        lastOpDesc = " - LOAD \t I, "+dest.toHexString(CustomHexFormat())
+        lastOpDesc = " - LOAD \t I, "+dest.toHexString(customHexFormat())
     }
 
     //Skip next instruction if Vx != Vy. The values of Vx and Vy are compared, and if they are not equal, the
@@ -619,7 +616,7 @@ class Cpu {
 
     //Set Vx = Vx + kk. Adds the value kk to the value of register Vx, then stores the result in Vx.
     fun add(x: Nibble, kk: Int) {
-        lastOpDesc = " - ADD \t ${regValueString(x)}, ${kk.toHexString(CustomHexFormat())}"
+        lastOpDesc = " - ADD \t ${regValueString(x)}, ${kk.toHexString(customHexFormat())}"
         // 7xkk wraps at 8-bit and does not affect VF.
         setRegisterValue(x.value,(getRegisterValue(x.value) + kk) and 0xFF)
     }
@@ -633,7 +630,7 @@ class Cpu {
 
     //Set Vx = kk. The interpreter puts the value kk into register Vx.
     fun load(dest: Nibble, value: Int){
-        lastOpDesc = " - LOAD V"+dest.value.toHexString(CustomHexFormat()) + ", " + "#${value.toHexString(CustomHexFormat())}"
+        lastOpDesc = " - LOAD V"+dest.value.toHexString(customHexFormat()) + ", " + "#${value.toHexString(customHexFormat())}"
         setRegisterValue(dest.value, value)
     }
 

@@ -12,33 +12,25 @@ class Display {
     }
 
     fun copy() : Array<BooleanArray> {
-        return Array(matrix.size) { x -> matrix[x].copyOf() }
+        val result = Array(matrix.size) { x -> matrix[x].copyOf() }
+        requiresDraw = false
+        return result
     }
 
-    fun pixels() : Int {
-        var sb = 0
-        matrix.forEachIndexed { xIndex, column ->
-            column.forEachIndexed { yIndex, value ->
-                if(value){
-                    sb++
-                }
-            }
-        }
-        return sb
-    }
+    private var requiresDraw = false
+
+    fun requiresDraw() = requiresDraw
 
     fun display(frameBuffer: FrameBuffer) {
-        //println("Display updating.")
-        var i = 0
         frameBuffer.getFrameBuffer().forEachIndexed { xIndexed, column ->
             column.forEachIndexed { yIndex, value ->
-                matrix[xIndexed][yIndex] = value
-                if(value == true){
-                    i++
+                val current = matrix[xIndexed][yIndex]
+                if(current != value){
+                    matrix[xIndexed][yIndex] = value
+                    requiresDraw = true
                 }
             }
         }
-        println("Display updating. Active pixels: " + i)
     }
 
     override fun toString(): String {

@@ -3,6 +3,8 @@ package com.twobard.kmpchip8.ui
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,6 +30,7 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -108,7 +111,24 @@ fun KeyButton(text: String, value: Int, focused: Boolean, onClick: (Int) -> Unit
                 color = if (focused) Color.Blue else Color.Gray,
                 shape = RoundedCornerShape(4.dp)
             )
-            .clickable { onClick(value) }
+            .pointerInput(Unit) {
+                awaitPointerEventScope {
+                    while (true) {
+                        val down = awaitFirstDown()
+                        println("Pointer DOWN at ${down.position}")
+                        onClick.invoke(value)
+
+                        val up = waitForUpOrCancellation()
+                        if (up != null) {
+                            println("Pointer UP at ${down.position}")
+                            onClick.invoke(value)
+                        } else {
+                            println("Pointer UP at ${down.position}")
+                            onClick.invoke(value)
+                        }
+                    }
+                }
+            }
     ) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text(text = text, fontSize = 24.sp)

@@ -19,8 +19,10 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,47 +40,46 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
+import com.twobard.kmpchip8.hardware.System
 
 @Composable
 @Preview
-fun DisplayUI(display: Array<BooleanArray>, onKeyPressed: (Int) -> Unit) {
+fun DisplayUI(system: System) {
 
     println("recomposing")
 
-    val width = display.size
-    val height = if (width > 0) display[0].size else 0
-    var canvasSize by remember { mutableStateOf(IntSize.Zero) }
-    val pixelSize = (canvasSize.width / 64).toFloat()
-    Column(modifier = Modifier.fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+    val display by system.displayData.collectAsState()
+    display?.let {
+        val width = it.size
+        val height = if (width > 0) it[0].size else 0
+        var canvasSize by remember { mutableStateOf(IntSize.Zero) }
+        val pixelSize = (canvasSize.width / 64).toFloat()
+        Column() {
 
-        Box(modifier = Modifier.wrapContentSize().align(Alignment.CenterHorizontally).border(2.dp, Color.Gray,
-            RoundedCornerShape(4.dp)
-        )){
-            Canvas(modifier = Modifier.width(300.dp).height(150.dp).onGloballyPositioned { coordinates ->
-                canvasSize = coordinates.size
-            }) {
-                for (x in 0 until width) {
-                    for (y in 0 until height) {
-                        val on = display[x][y]
-                        drawRect(
-                            color = if (on) Color.Blue else Color.Green,
-                            topLeft = Offset(x * pixelSize, y * pixelSize),
-                            size = androidx.compose.ui.geometry.Size(pixelSize, pixelSize),
-                            style = Fill
-                        )
+            Box(modifier = Modifier.wrapContentSize().align(Alignment.CenterHorizontally).border(2.dp, Color.Gray,
+                RoundedCornerShape(4.dp)
+            )){
+                Canvas(modifier = Modifier.width(300.dp).height(150.dp).onGloballyPositioned { coordinates ->
+                    canvasSize = coordinates.size
+                }) {
+                    for (x in 0 until width) {
+                        for (y in 0 until height) {
+                            val on = it[x][y]
+                            drawRect(
+                                color = if (on) Color.Blue else Color.Green,
+                                topLeft = Offset(x * pixelSize, y * pixelSize),
+                                size = androidx.compose.ui.geometry.Size(pixelSize, pixelSize),
+                                style = Fill
+                            )
+                        }
                     }
                 }
             }
-        }
-
-
-        ElevatedCard(modifier = Modifier.border(2.dp, Color.Black, RoundedCornerShape(4.dp))) {
-            Box(modifier = Modifier.padding(12.dp)) {
-                Keyboard( onKeyPressed)
-            }
 
         }
-
+    } ?: run {
+        Text("Something went wrong")
     }
+
 
 }

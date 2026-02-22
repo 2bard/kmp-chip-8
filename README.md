@@ -1,18 +1,18 @@
 ## KMP CHIP-8 Emulator
 
-Proof of concept chip-8 emulator which runs on iOS and Android using Kotlin Multiplatform.
+Proof of concept chip-8 emulator which runs on iOS/android/wasm/desktop using Kotlin Multiplatform.
 
 ### JVM
-![JVM](assets/jvm.gif)
+<img src="assets/jvm.gif" width="200">
 
 ### iOS
-![ios](assets/ios.gif)
+<img src="assets/ios.gif" width="200">
 
 ### Android
-![Android](assets/android.gif)
+<img src="assets/android.gif" width="200">
 
 ### Webassembly
-![wasm](assets/jvm.gif)
+<img src="assets/jvm.gif" width="200">
 
 
 ### TODO

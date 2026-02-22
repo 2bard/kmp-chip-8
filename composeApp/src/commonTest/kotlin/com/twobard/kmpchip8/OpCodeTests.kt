@@ -104,7 +104,7 @@ class OpCodeTests {
         system.cpu.execute(callOpCode)
 
         //Check programCounter
-        assertEquals(combineNibbles(addressPt1, addressPt2, addressPt3), system.cpu.getProgramCounter() + 2)
+        assertEquals(combineNibbles(addressPt1, addressPt2, addressPt3), system.cpu.getProgramCounter())
 
         //Check stackPointer (treated as depth)
         assertEquals(1, system.cpu.getStackPointer())

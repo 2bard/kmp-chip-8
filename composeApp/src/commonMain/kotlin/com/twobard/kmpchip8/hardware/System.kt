@@ -13,22 +13,31 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlin.text.HexFormat
 
-class System(val memory: Memory = Memory(),
-             val frameBuffer: FrameBuffer = FrameBuffer(),
+class System(
+    val strictMode: Boolean,
+    val logging: Boolean,
+            var memory: Memory = Memory(),
+             var frameBuffer: FrameBuffer = FrameBuffer(),
              var keyboard: KeyboardInterface = Keyboard(),
              var timer : Timer = Timer(),
-             val font: Config.Chip8Font = Config.DEFAULT_FONT,
-             val display: Display = Display()) {
+             var font: Config.Chip8Font = Config.DEFAULT_FONT,
+             var display: Display = Display()) {
 
 
-    var cpu: Cpu
+    lateinit var cpu: Cpu
 
     init {
         loadFont(memory, font)
+        createCpu(strictMode, logging)
+    }
+
+    fun createCpu(strictMode : Boolean, logging: Boolean){
         cpu = Cpu(
+            strictMode = strictMode,
+            enableLogging = logging,
             systemInterface = object : SystemInterface {
                 override fun clearDisplay() {
-                   display.clear()
+                    display.clear()
                     frameBuffer.clear()
                 }
 
@@ -70,11 +79,19 @@ class System(val memory: Memory = Memory(),
         return result
     }
 
-
-
+    fun clearState(){
+        memory = Memory()
+        frameBuffer = FrameBuffer()
+        display = Display()
+        timer = Timer()
+        keyboard = Keyboard()
+        createCpu(strictMode, logging)
+    }
 
     suspend fun startGame(title: String){
 
+        clearState()
+        //Clear all
         coroutineScope {
             launch(Dispatchers.Default) {
                 val rom = getRom(title)

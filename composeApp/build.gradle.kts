@@ -31,7 +31,7 @@ kotlin {
     }
     
     jvm()
-    
+//
     js {
         browser()
         binaries.executable()
@@ -47,6 +47,9 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.activity.compose)
+            implementation(libs.koin.android)
+            implementation(libs.koin.compose.viewmodel)
+            implementation(libs.koin.compose.navigation)
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
@@ -57,6 +60,15 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+
+            implementation(libs.koin.core)
+
+            implementation(libs.voyager.navigator) // Voyager Core
+            implementation(libs.voyager.screenmodel)
+            implementation(libs.voyager.transitions)
+
+            implementation(libs.voyager.koin)
+
         }
         commonTest.dependencies {
             implementation(libs.kotlinx.coroutinesTest)

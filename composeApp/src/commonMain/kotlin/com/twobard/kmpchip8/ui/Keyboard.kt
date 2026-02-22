@@ -8,11 +8,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -24,26 +22,23 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
 fun Keyboard(onKeyPressed: (Int) -> Unit) {
     // 4x4 keypad layout
-    val keys = listOf(
-        listOf(1, 2, 3, 4),
-        listOf(5, 6, 7, 8),
-        listOf(9, 10, 11, 12),
-        listOf(13, 0, 15, 19)
+    val keys: List<List<Pair<Int, String>>> = listOf(
+        listOf(1 to "1", 2 to "2", 3 to "3", 12 to "C"),
+        listOf(4 to "4", 5 to "5", 6 to "6", 13 to "D"),
+        listOf(7 to "7", 8 to "8", 9 to "9", 14 to "E"),
+        listOf(10 to "A", 0 to "0", 11 to "B", 15 to "F")
     )
 
     // Track focused key coordinates (row, col)
@@ -69,10 +64,11 @@ fun Keyboard(onKeyPressed: (Int) -> Unit) {
                         Key.DirectionLeft -> focusedCol = (focusedCol - 1).coerceAtLeast(0)
                         Key.DirectionRight -> focusedCol = (focusedCol + 1).coerceAtMost(3)
                         Key.Enter, Key.Spacebar -> {
-                            val value = keys[focusedRow][focusedCol]
-                            println("Key pressed: $value")
-                            onKeyPressed(value)
+                            val (num, label) = keys[focusedRow][focusedCol]
+                            println("Key pressed: $num ($label)")
+                            onKeyPressed(num)
                         }
+
                         else -> {}
                     }
                     true
@@ -85,15 +81,15 @@ fun Keyboard(onKeyPressed: (Int) -> Unit) {
     ) {
         keys.forEachIndexed { rowIndex, row ->
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                row.forEachIndexed { colIndex, value ->
+                row.forEachIndexed { colIndex, (num, label) ->
                     val isFocused = rowIndex == focusedRow && colIndex == focusedCol
                     KeyButton(
-                        text = value.toString(),
-                        value = value,
+                        text = label,
+                        value = num,
                         focused = isFocused,
                         onClick = {
-                            println("Clicked: $value")
-                            onKeyPressed(value)
+                            println("Clicked: $num ($label)")
+                            onKeyPressed(num)
                         }
                     )
                 }
@@ -104,7 +100,7 @@ fun Keyboard(onKeyPressed: (Int) -> Unit) {
 
 @Composable
 fun KeyButton(text: String, value: Int, focused: Boolean, onClick: (Int) -> Unit) {
-    Card(
+    ElevatedCard(
         modifier = Modifier
             .size(64.dp)
             .border(
@@ -112,8 +108,7 @@ fun KeyButton(text: String, value: Int, focused: Boolean, onClick: (Int) -> Unit
                 color = if (focused) Color.Blue else Color.Gray,
                 shape = RoundedCornerShape(4.dp)
             )
-            .clickable { onClick(value) },
-        elevation = CardDefaults.cardElevation(4.dp)
+            .clickable { onClick(value) }
     ) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text(text = text, fontSize = 24.sp)

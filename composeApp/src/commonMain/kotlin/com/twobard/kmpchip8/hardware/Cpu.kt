@@ -16,14 +16,18 @@ interface SystemInterface {
 class Cpu {
 
     var lastOpDesc: String? = null
-    val enableLogging = true
+    var enableLogging = true
     val systemInterface: SystemInterface
     var randomNumberGenerator: Utils.RandomNumberGeneratorInterface
 
     constructor(
+        enableLogging: Boolean,
+        strictMode: Boolean,
         systemInterface: SystemInterface,
         randomNumberGenerator: Utils.RandomNumberGeneratorInterface = Utils.RandomNumberGenerator()
     ) {
+        this.enableLogging = enableLogging
+        this.strictMode = strictMode
         this.systemInterface = systemInterface
         this.randomNumberGenerator = randomNumberGenerator
         this.stack = ArrayList<Int>(16)
@@ -38,7 +42,7 @@ class Cpu {
 
     private val registers: IntArray
     private var indexRegister = 0
-    val strictMode = false
+    var strictMode = false
 
     fun setRegisterValue(index: Int, value: Int){
         require(value in 0..255)

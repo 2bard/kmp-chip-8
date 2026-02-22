@@ -29,6 +29,18 @@ class Utils {
     }
 }
 
+fun CustomHexFormat() = HexFormat {
+    number.removeLeadingZeros = true
+    bytes {
+        upperCase = true
+        bytesPerLine = 1
+        bytesPerGroup = 4
+        groupSeparator = "|" // vertical bar
+        bytePrefix = "#"
+        byteSuffix = "" // empty string
+    }
+}
+
 //fun Pair<Nibble, Nibble>.asByte(): Byte {
 //    return ((first.value shl 4) or (second.value and 0xF)).toByte()
 //}

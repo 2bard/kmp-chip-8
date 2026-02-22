@@ -1,6 +1,7 @@
 package com.twobard.kmpchip8.hardware
 
 
+import com.twobard.kmpchip8.CustomHexFormat
 import com.twobard.kmpchip8.Utils.Companion.toNibbles
 import kmpchip8.composeapp.generated.resources.Res
 import kotlinx.coroutines.CoroutineScope
@@ -10,6 +11,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlin.text.HexFormat
 
 class System(val memory: Memory = Memory(),
              val frameBuffer: FrameBuffer = FrameBuffer(),
@@ -61,10 +63,15 @@ class System(val memory: Memory = Memory(),
     }
 
     fun fetchOpcode(): OpCode {
-        val high = memory[cpu.getProgramCounter()]
-        val low  = memory[cpu.getProgramCounter() + 1]
-        return OpCode(high, low)
+        val high = memory.get(cpu.getProgramCounter())
+        val low  = memory.get(cpu.getProgramCounter() + 1)
+
+        val result  = OpCode(high, low)
+        return result
     }
+
+
+
 
     suspend fun startGame(title: String){
 
@@ -88,9 +95,10 @@ class System(val memory: Memory = Memory(),
         while (timer.running) {
             val opcode = fetchOpcode()
             cpu.ensureValidState()
+            val currentCounter = cpu.getProgramCounter()
             cpu.incrementProgramCounter()
             cpu.ensureValidState()
-            cpu.execute(opcode)
+            cpu.execute(opcode, currentCounter.toHexString(CustomHexFormat()))
             cpu.ensureValidState()
 
             delay(cycleDelay)

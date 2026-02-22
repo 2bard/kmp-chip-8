@@ -32,17 +32,19 @@ class MainActivity : ComponentActivity() {
             var system by remember { mutableStateOf(System())}
             LaunchedEffect(true) {
                 coroutineScope.launch {
+                    //system.startGame("blinky.ch8")
                     //system.startGame(title = "2-ibm-logo.ch8")
                     //system.startGame(title = "4-flags.ch8")
                     //system.startGame(title = "ibm_new.ch8")
                     //system.startGame(title = "1-chip8-logo.ch8")
                     //system.startGame(title = "delaytimertest.ch8")
-                    //system.startGame(title = "octojam1title.ch8")
+                    system.startGame(title = "octojam1title.ch8")
                     //system.startGame(title = "octojam3title.ch8")
                     //system.startGame(title = "octojam8title.ch8")
                     //system.startGame(title = "octoachip8story.ch8")
                     //system.startGame("ibm.ch8")
                     //system.startGame("randomnumbertest")
+                    //system.startGame("test_opcode.ch8")
                 }
             }
 

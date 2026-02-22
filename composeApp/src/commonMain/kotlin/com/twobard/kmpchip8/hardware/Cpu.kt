@@ -1,5 +1,6 @@
 package com.twobard.kmpchip8.hardware
 
+import com.twobard.kmpchip8.CustomHexFormat
 import com.twobard.kmpchip8.Utils
 import kotlinx.coroutines.delay
 
@@ -124,9 +125,12 @@ class Cpu {
     }
     //End stack
 
-    suspend fun execute(opcode: System.OpCode) {
+    var currentCounter: String? = null
+
+    suspend fun execute(opcode: System.OpCode, currentCounter: String?) {
         val nibbles = opcode.toNibbles()
         var didExecute = false
+        this.currentCounter = currentCounter
         when(nibbles[0].value) {
             0x0 -> {
                 nibbles[3].value.let {
@@ -360,7 +364,7 @@ class Cpu {
 
     //Set I = I + Vx. The values of I and Vx are added, and the results are stored in I.
     fun addI(x: Nibble){
-        log("Opcode->addI")
+        log("DEBUGGAH " + currentCounter + " - ADD \t I, "+ regValueString(x))
         setIndexRegister(getIndexRegister() + getRegisterValue(x.value))
     }
 
@@ -404,11 +408,26 @@ class Cpu {
         }
     }
 
+    fun regValueString(n: Nibble) : String {
+        return "V${n.value.toHexString(CustomHexFormat())}"
+    }
+
+    fun argValueString(n: Nibble) : String {
+        return "#${n.value.toHexString(CustomHexFormat())}"
+    }
+
+    fun argValueString(n: Int) : String {
+        return "#${n.toHexString(CustomHexFormat())}"
+    }
+
     //Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision. The interpreter reads nibbles from memory, starting at the address stored in I. These bytes are then displayed as sprites on screen
     //at coordinates (Vx, Vy). Sprites are XOR’d onto the existing screen. If this causes any pixels to be erased,
     //VF is set to 1, otherwise it is set to 0. If the sprite is positioned so part of it is outside the coordinates of
     //the display, it wraps around to the opposite side of the screen.
     fun dxyn(n1: Nibble, n2: Nibble, n3: Nibble){
+
+        log("DEBUGGAH " + currentCounter + " - DRW \t ${regValueString(n1)} ${regValueString(n2)} ${argValueString(n3)}")
+
         val displayWidth = systemInterface.getFrameBuffer().width
         val displayHeight = systemInterface.getFrameBuffer().height
         val xStart = getRegisterValue(n1.value) % displayWidth
@@ -470,8 +489,9 @@ class Cpu {
 
     //Set I = nnn. The value of register I is set to nnn.
     fun annn(n1: Nibble, n2: Nibble, n3: Nibble){
-        log("Opcode->annn n1=${n1.value} n2=${n2.value} n3=${n3.value} ")
-        setIndexRegister(combineNibbles(n1, n2, n3))
+        val dest = combineNibbles(n1, n2, n3)
+        log("DEBUGGAH " + currentCounter + " - LD \t I, "+dest.toHexString(CustomHexFormat()))
+        setIndexRegister(dest)
     }
 
     //Skip next instruction if Vx != Vy. The values of Vx and Vy are compared, and if they are not equal, the
@@ -580,7 +600,7 @@ class Cpu {
 
     //Set Vx = Vx + kk. Adds the value kk to the value of register Vx, then stores the result in Vx.
     fun add(x: Nibble, kk: Int) {
-        log("Opcode->add x=${x.value} kk=$kk")
+        log("DEBUGGAH " + currentCounter + " - ADD \t ${regValueString(x)}, ${kk.toHexString(CustomHexFormat())}")
         // 7xkk wraps at 8-bit and does not affect VF.
         setRegisterValue(x.value,(getRegisterValue(x.value) + kk) and 0xFF)
     }
@@ -594,7 +614,7 @@ class Cpu {
 
     //Set Vx = kk. The interpreter puts the value kk into register Vx.
     fun load(dest: Nibble, value: Int){
-        log("Opcode->load dest=${dest.value} value=$value")
+        log("DEBUGGAH " + currentCounter + " - LD \t V"+dest.value.toHexString(CustomHexFormat()) + ", " + "#${value.toHexString(CustomHexFormat())}")
         setRegisterValue(dest.value, value)
     }
 
@@ -613,7 +633,7 @@ class Cpu {
     }
 
     fun sne(dest: Nibble, value: Int){
-        log("Opcode->sne dest=${dest.value} value=$value")
+        log("DEBUGGAH " + currentCounter + " - SNE \t ${regValueString(dest)}, ${argValueString(value)}")
         if(getRegisterValue(dest.value) != value){
             incrementProgramCounter()
         }
@@ -626,7 +646,7 @@ class Cpu {
     }
 
     fun incrementProgramCounter() {
-        programCounter += 2
+        setProgramCounter(programCounter + 2)
     }
 
     fun setProgramCounter(newValue: Int){
